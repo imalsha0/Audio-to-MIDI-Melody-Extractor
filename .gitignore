@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+
+# Audio/MIDI working files
+backend/storage/uploads/*
+backend/storage/processed/*
+backend/storage/output/*
+!backend/storage/**/.gitkeep
+
+# OS
+.DS_Store
