@@ -16,3 +16,8 @@ backend/storage/output/*
 
 # OS
 .DS_Store
+# Audio/MIDI generated files - don't commit these
+backend/output/
+backend/separated/
+backend/test_audio/*.mp3
+backend/test_audio/*.wav

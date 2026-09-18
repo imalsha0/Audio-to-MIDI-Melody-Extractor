@@ -9,7 +9,11 @@ from basic_pitch.inference import predict_and_save
 from basic_pitch import ICASSP_2022_MODEL_PATH
 
 
-def extract_melody(audio_path: str, output_dir: str = "output"):
+def extract_melody(audio_path: str, output_dir: str = None):
+    if output_dir is None:
+        # Create a unique output folder based on the input file's parent folder name
+        song_name = os.path.basename(os.path.dirname(audio_path)) or "output"
+        output_dir = os.path.join("output", song_name)
     if not os.path.exists(audio_path):
         print(f"Error: File not found -> {audio_path}")
         sys.exit(1)
