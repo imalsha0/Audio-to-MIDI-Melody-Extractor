@@ -5,6 +5,11 @@ Usage: python extract_melody.py test_audio/sample.mp3
 
 import sys
 import os
+import io
+
+if hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 from basic_pitch.inference import predict_and_save
 from basic_pitch import ICASSP_2022_MODEL_PATH
 
