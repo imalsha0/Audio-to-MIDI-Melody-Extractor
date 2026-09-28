@@ -36,6 +36,10 @@ def extract_melody(audio_path: str, output_dir: str = None):
         save_model_outputs=False,
         save_notes=False,
         model_or_model_path=ICASSP_2022_MODEL_PATH,
+        onset_threshold=0.5, 
+        frame_threshold=0.3, 
+        minimum_note_length=58, 
+        melodia_trick=True
     )
 
     print(f"\nDone! MIDI file saved in: {output_dir}/")

@@ -101,7 +101,20 @@ def process_audio_pipeline(input_audio_path: Path, song_name: str) -> dict:
         if possible_vocals:
             vocals_path = possible_vocals[0]
 
-    audio_for_pitch = vocals_path if vocals_path.exists() else input_audio_path
+    audio_for_pitch = input_audio_path
+    if vocals_path.exists():
+        try:
+            import librosa
+            import numpy as np
+            y, sr = librosa.load(vocals_path, sr=None, mono=True)
+            # If the vocal stem has very low volume, it's likely an instrumental track
+            if np.max(np.abs(y)) > 0.02: 
+                audio_for_pitch = vocals_path
+            else:
+                print(f"[Demucs] Vocal stem is too quiet (Instrumental track). Bypassing stem separation.")
+        except Exception as e:
+            print(f"Error checking vocal volume: {e}")
+            audio_for_pitch = vocals_path
 
     # 3. Generate Melody MIDI with Basic Pitch
     print(f"[Basic Pitch] Extracting melody notes from {audio_for_pitch}...")
