@@ -677,7 +677,7 @@
   }
 
   .btn-transpose:focus-visible, .tab-btn:focus-visible, .record-btn:focus-visible,
-  .btn-download:focus-visible, .btn-submit:focus-visible {
+  .btn-download:focus-visible, .btn-preview:focus-visible, .btn-submit:focus-visible {
     outline: 2px solid #b5b2ff;
     outline-offset: 3px;
   }
@@ -695,6 +695,34 @@
     border-color: rgba(174, 180, 219, 0.1);
     border-radius: 14px;
     background: rgba(8, 10, 18, 0.58);
+    scrollbar-color: rgba(161, 158, 255, 0.58) rgba(255, 255, 255, 0.035);
+    scrollbar-width: thin;
+  }
+
+  .chords-grid::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .chords-grid::-webkit-scrollbar-track {
+    margin: 8px 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .chords-grid::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: rgba(161, 158, 255, 0.58);
+    background-clip: padding-box;
+  }
+
+  .chords-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(185, 181, 255, 0.85);
+    background-clip: padding-box;
+  }
+
+  .chords-grid::-webkit-scrollbar-button {
+    display: none;
   }
 
   .chord-badge {
@@ -714,6 +742,12 @@
   .chord-time { color: #9299ad; }
 
   .download-group { gap: 12px; }
+
+  .download-item {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
 
   .btn-download {
     min-height: 54px;
@@ -737,6 +771,36 @@
     transform: translateY(-2px);
     filter: brightness(1.08);
     box-shadow: 0 10px 28px rgba(112, 119, 255, 0.22);
+  }
+
+  .btn-preview {
+    min-height: 42px;
+    padding: 9px 14px;
+    border: 1px solid rgba(174, 180, 219, 0.15);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.035);
+    color: #d9dcf3;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .btn-preview:hover:not(:disabled), .btn-preview.is-playing {
+    border-color: rgba(161, 158, 255, 0.42);
+    background: rgba(139, 140, 255, 0.12);
+    color: #c9c7ff;
+  }
+
+  .btn-preview:disabled { cursor: wait; opacity: 0.7; }
+
+  .preview-status {
+    grid-column: 1 / -1;
+    min-height: 18px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: center;
   }
 
   #progressSection { border-color: rgba(157, 154, 255, 0.2); }
@@ -887,12 +951,23 @@
 
     <!-- Download Buttons -->
     <div class="download-group">
-      <a id="downloadMelodyBtn" class="btn-download btn-melody-dl" href="#" download>
-        <i class="fa-solid fa-download"></i> Download Melody MIDI (.mid)
-      </a>
-      <a id="downloadChordsBtn" class="btn-download btn-chords-dl" href="#" download>
-        <i class="fa-solid fa-file-export"></i> Download Chords MIDI (.mid)
-      </a>
+      <div class="download-item">
+        <a id="downloadMelodyBtn" class="btn-download btn-melody-dl" href="#" download>
+          <i class="fa-solid fa-download"></i> Download Melody MIDI (.mid)
+        </a>
+        <button id="previewMelodyBtn" class="btn-preview" type="button" data-track="melody">
+          <i class="fa-solid fa-play"></i> Preview Melody
+        </button>
+      </div>
+      <div class="download-item">
+        <a id="downloadChordsBtn" class="btn-download btn-chords-dl" href="#" download>
+          <i class="fa-solid fa-file-export"></i> Download Chords MIDI (.mid)
+        </a>
+        <button id="previewChordsBtn" class="btn-preview" type="button" data-track="chords">
+          <i class="fa-solid fa-play"></i> Preview Chords
+        </button>
+      </div>
+      <div class="preview-status" id="previewStatus" aria-live="polite"></div>
     </div>
 
   </div>
@@ -913,8 +988,263 @@
   let semitoneOffset = 0;
   let originalKeyRoot = "C";
   let originalKeyMode = "Major";
+  let activeMidiPreview = null;
+  let midiAudioContext = null;
 
   const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+  function setPreviewButton(button, state) {
+    const trackName = button.dataset.track === "melody" ? "Melody" : "Chords";
+    button.disabled = state === "loading";
+    button.classList.toggle("is-playing", state === "playing");
+
+    if (state === "loading") {
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading MIDI...';
+    } else if (state === "playing") {
+      button.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Preview';
+    } else {
+      button.innerHTML = `<i class="fa-solid fa-play"></i> Preview ${trackName}`;
+    }
+  }
+
+  function stopMidiPreview(state = activeMidiPreview) {
+    if (!state) return;
+    state.stopped = true;
+    clearTimeout(state.timeoutId);
+    state.sources.forEach(source => {
+      try {
+        source.stop();
+      } catch (error) {
+        if (error.name !== "InvalidStateError") throw error;
+      }
+    });
+    state.sources.clear();
+    setPreviewButton(state.button, "idle");
+    if (activeMidiPreview === state) activeMidiPreview = null;
+  }
+
+  function readVariableLength(bytes, cursor, end) {
+    let value = 0;
+    let count = 0;
+    let byte;
+    do {
+      if (cursor.index >= end || count++ >= 4) {
+        throw new Error("Invalid MIDI variable-length value.");
+      }
+      byte = bytes[cursor.index++];
+      value = (value << 7) | (byte & 0x7f);
+    } while (byte & 0x80);
+    return value;
+  }
+
+  function parseMidiFile(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const dataView = new DataView(buffer);
+    const readTag = (offset) => String.fromCharCode(...bytes.subarray(offset, offset + 4));
+
+    if (bytes.length < 14 || readTag(0) !== "MThd") {
+      throw new Error("The server returned an invalid MIDI file.");
+    }
+
+    const headerLength = dataView.getUint32(4);
+    const format = dataView.getUint16(8);
+    const trackCount = dataView.getUint16(10);
+    const division = dataView.getUint16(12);
+    if (headerLength < 6 || format > 2 || division === 0 || division & 0x8000) {
+      throw new Error("This MIDI timing format is not supported for preview.");
+    }
+
+    const notes = [];
+    const tempoChanges = [{ tick: 0, microsecondsPerQuarter: 500000 }];
+    let offset = 8 + headerLength;
+
+    for (let trackIndex = 0; trackIndex < trackCount; trackIndex++) {
+      if (offset + 8 > bytes.length || readTag(offset) !== "MTrk") {
+        throw new Error("The MIDI file contains an invalid track.");
+      }
+      const trackLength = dataView.getUint32(offset + 4);
+      const trackEnd = offset + 8 + trackLength;
+      if (trackEnd > bytes.length) throw new Error("The MIDI track is incomplete.");
+
+      const cursor = { index: offset + 8 };
+      const activeNotes = new Map();
+      let tick = 0;
+      let runningStatus = 0;
+
+      while (cursor.index < trackEnd) {
+        tick += readVariableLength(bytes, cursor, trackEnd);
+        let status = bytes[cursor.index++];
+        if (status < 0x80) {
+          cursor.index--;
+          status = runningStatus;
+          if (!status) throw new Error("The MIDI track has invalid running status.");
+        } else if (status < 0xf0) {
+          runningStatus = status;
+        }
+
+        if (status === 0xff) {
+          const metaType = bytes[cursor.index++];
+          const length = readVariableLength(bytes, cursor, trackEnd);
+          if (cursor.index + length > trackEnd) throw new Error("The MIDI metadata is incomplete.");
+          if (metaType === 0x51 && length === 3) {
+            tempoChanges.push({
+              tick,
+              microsecondsPerQuarter:
+                (bytes[cursor.index] << 16) |
+                (bytes[cursor.index + 1] << 8) |
+                bytes[cursor.index + 2]
+            });
+          }
+          cursor.index += length;
+          continue;
+        }
+
+        if (status === 0xf0 || status === 0xf7) {
+          cursor.index += readVariableLength(bytes, cursor, trackEnd);
+          continue;
+        }
+        if (status >= 0xf0) {
+          throw new Error("This MIDI file contains an unsupported system event.");
+        }
+
+        const command = status & 0xf0;
+        const channel = status & 0x0f;
+        const firstData = bytes[cursor.index++];
+        const secondData = command === 0xc0 || command === 0xd0 ? 0 : bytes[cursor.index++];
+        if (cursor.index > trackEnd || firstData >= 0x80 || secondData >= 0x80) {
+          throw new Error("The MIDI track contains invalid note data.");
+        }
+
+        const noteKey = `${channel}:${firstData}`;
+        if (command === 0x90 && secondData > 0) {
+          const queued = activeNotes.get(noteKey) || [];
+          queued.push({ tick, pitch: firstData, velocity: secondData });
+          activeNotes.set(noteKey, queued);
+        } else if (command === 0x80 || (command === 0x90 && secondData === 0)) {
+          const queued = activeNotes.get(noteKey);
+          if (queued && queued.length) {
+            const note = queued.shift();
+            notes.push({ ...note, endTick: Math.max(tick, note.tick + 1) });
+          }
+        }
+      }
+
+      offset = trackEnd;
+    }
+
+    if (!notes.length) throw new Error("No playable notes were found in this MIDI file.");
+
+    tempoChanges.sort((a, b) => a.tick - b.tick);
+    const tickToSeconds = (targetTick) => {
+      let seconds = 0;
+      let previousTick = 0;
+      let tempo = 500000;
+      for (const change of tempoChanges) {
+        if (change.tick > targetTick) break;
+        seconds += (change.tick - previousTick) * tempo / (division * 1000000);
+        previousTick = change.tick;
+        tempo = change.microsecondsPerQuarter;
+      }
+      return seconds + (targetTick - previousTick) * tempo / (division * 1000000);
+    };
+
+    return notes.map(note => ({
+      pitch: note.pitch,
+      velocity: note.velocity,
+      start: tickToSeconds(note.tick),
+      end: tickToSeconds(note.endTick)
+    }));
+  }
+
+  async function previewMidi(button) {
+    if (activeMidiPreview && activeMidiPreview.button === button) {
+      stopMidiPreview();
+      document.getElementById("previewStatus").textContent = "Preview stopped.";
+      return;
+    }
+    if (activeMidiPreview) stopMidiPreview();
+
+    const previewState = { button, sources: new Set(), timeoutId: null, stopped: false };
+    activeMidiPreview = previewState;
+    setPreviewButton(button, "loading");
+    document.getElementById("previewStatus").textContent = "Loading MIDI preview...";
+
+    try {
+      const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextConstructor) throw new Error("Audio preview is not supported in this browser.");
+      if (!midiAudioContext || midiAudioContext.state === "closed") {
+        midiAudioContext = new AudioContextConstructor();
+      }
+      await midiAudioContext.resume();
+
+      const downloadButton = document.getElementById(
+        button.dataset.track === "melody" ? "downloadMelodyBtn" : "downloadChordsBtn"
+      );
+      const response = await fetch(downloadButton.href);
+      if (!response.ok) {
+        let detail = "";
+        try {
+          detail = (await response.json()).detail || "";
+        } catch (error) {
+          detail = "";
+        }
+        throw new Error(detail || `Could not load the MIDI file (HTTP ${response.status}).`);
+      }
+
+      const notes = parseMidiFile(await response.arrayBuffer());
+      if (previewState.stopped || activeMidiPreview !== previewState) return;
+
+      const startTime = midiAudioContext.currentTime + 0.05;
+      let lastEnd = 0;
+      notes.forEach(note => {
+        const noteStart = startTime + note.start;
+        const noteEnd = noteStart + Math.max(0.08, note.end - note.start);
+        const oscillator = midiAudioContext.createOscillator();
+        const gain = midiAudioContext.createGain();
+        const volume = (note.velocity / 127) * (button.dataset.track === "chords" ? 0.055 : 0.075);
+
+        oscillator.type = button.dataset.track === "chords" ? "sine" : "triangle";
+        oscillator.frequency.value = 440 * Math.pow(2, (note.pitch - 69) / 12);
+        gain.gain.setValueAtTime(0, noteStart);
+        gain.gain.linearRampToValueAtTime(volume, noteStart + 0.015);
+        gain.gain.setValueAtTime(volume, noteEnd - 0.035);
+        gain.gain.linearRampToValueAtTime(0, noteEnd);
+        oscillator.connect(gain);
+        gain.connect(midiAudioContext.destination);
+        oscillator.onended = () => {
+          previewState.sources.delete(oscillator);
+          oscillator.disconnect();
+          gain.disconnect();
+        };
+        oscillator.start(noteStart);
+        oscillator.stop(noteEnd + 0.01);
+        previewState.sources.add(oscillator);
+        lastEnd = Math.max(lastEnd, note.end);
+      });
+
+      setPreviewButton(button, "playing");
+      document.getElementById("previewStatus").textContent =
+        `Playing ${button.dataset.track} MIDI preview.`;
+      previewState.timeoutId = setTimeout(() => {
+        if (activeMidiPreview === previewState) {
+          stopMidiPreview(previewState);
+          document.getElementById("previewStatus").textContent = "Preview finished.";
+        }
+      }, (lastEnd + 0.2) * 1000);
+    } catch (error) {
+      if (activeMidiPreview === previewState) {
+        stopMidiPreview(previewState);
+        document.getElementById("previewStatus").textContent = `Preview error: ${error.message}`;
+      }
+    }
+  }
+
+  document.getElementById("previewMelodyBtn").addEventListener("click", event => {
+    previewMidi(event.currentTarget);
+  });
+  document.getElementById("previewChordsBtn").addEventListener("click", event => {
+    previewMidi(event.currentTarget);
+  });
 
   // Tab Switcher
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -1036,6 +1366,7 @@
 
   // Display Results Dashboard
   function displayResults(data) {
+    if (activeMidiPreview) stopMidiPreview();
     currentSongName = data.song_name;
     rawChordsData = data.chords || [];
     originalKeyRoot = data.key_root || "C";
@@ -1052,10 +1383,12 @@
 
   // Key Transposition Logic
   document.getElementById("transposeDownBtn").addEventListener("click", () => {
+    if (activeMidiPreview) stopMidiPreview();
     semitoneOffset = Math.max(-12, semitoneOffset - 1);
     updateTranspositionUI();
   });
   document.getElementById("transposeUpBtn").addEventListener("click", () => {
+    if (activeMidiPreview) stopMidiPreview();
     semitoneOffset = Math.min(12, semitoneOffset + 1);
     updateTranspositionUI();
   });
@@ -1101,8 +1434,9 @@
     });
 
     // Update Download Links with Transpose Parameter
-    document.getElementById("downloadMelodyBtn").href = `${API_URL}/download-melody/${currentSongName}?transpose=${semitoneOffset}`;
-    document.getElementById("downloadChordsBtn").href = `${API_URL}/download-chords/${currentSongName}?transpose=${semitoneOffset}`;
+    const encodedSongName = encodeURIComponent(currentSongName);
+    document.getElementById("downloadMelodyBtn").href = `${API_URL}/download-melody/${encodedSongName}?transpose=${semitoneOffset}`;
+    document.getElementById("downloadChordsBtn").href = `${API_URL}/download-chords/${encodedSongName}?transpose=${semitoneOffset}`;
   }
 </script>
 </body>

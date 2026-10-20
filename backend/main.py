@@ -3,10 +3,13 @@ FastAPI backend for Audio-to-MIDI Melody & Chord Extractor.
 Run with: uvicorn main:app --reload
 """
 
+import asyncio
 import os
 import sys
 import shutil
 import subprocess
+import tempfile
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -38,14 +41,68 @@ app.add_middleware(
 UPLOAD_DIR = Path("uploads")
 OUTPUT_DIR = Path("output")
 SEPARATED_DIR = Path("separated")
+OUTPUT_RETENTION_SECONDS = 60 * 60
+OUTPUT_CLEANUP_INTERVAL_SECONDS = 60
 
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 SEPARATED_DIR.mkdir(exist_ok=True)
 
+cleanup_task: Optional[asyncio.Task] = None
+
 
 class URLRequest(BaseModel):
     url: str
+
+
+def cleanup_expired_outputs(now: Optional[float] = None) -> int:
+    """Remove per-song output folders after one hour without a download."""
+    current_time = time.time() if now is None else now
+    removed_count = 0
+
+    for song_output_dir in OUTPUT_DIR.iterdir():
+        if not song_output_dir.is_dir():
+            continue
+
+        try:
+            if current_time - song_output_dir.stat().st_mtime >= OUTPUT_RETENTION_SECONDS:
+                shutil.rmtree(song_output_dir)
+                removed_count += 1
+                print(f"[Cleanup] Removed expired MIDI output folder: {song_output_dir}")
+        except FileNotFoundError:
+            continue
+        except OSError as e:
+            print(f"[Cleanup] Could not remove expired MIDI output folder {song_output_dir}: {e}")
+
+    return removed_count
+
+
+async def cleanup_expired_outputs_loop():
+    while True:
+        await asyncio.to_thread(cleanup_expired_outputs)
+        await asyncio.sleep(OUTPUT_CLEANUP_INTERVAL_SECONDS)
+
+
+@app.on_event("startup")
+async def start_output_cleanup():
+    global cleanup_task
+    cleanup_task = asyncio.create_task(cleanup_expired_outputs_loop())
+
+
+@app.on_event("shutdown")
+async def stop_output_cleanup():
+    if cleanup_task is not None:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
+
+
+def mark_output_downloaded(song_name: str):
+    song_output_dir = OUTPUT_DIR / song_name
+    if song_output_dir.is_dir():
+        os.utime(song_output_dir, None)
 
 
 @app.get("/")
@@ -101,53 +158,62 @@ def process_audio_pipeline(input_audio_path: Path, song_name: str) -> dict:
         if possible_vocals:
             vocals_path = possible_vocals[0]
 
-    audio_for_pitch = input_audio_path
-    if vocals_path.exists():
-        try:
-            import librosa
-            import numpy as np
-            y, sr = librosa.load(vocals_path, sr=None, mono=True)
-            # If the vocal stem has very low volume, it's likely an instrumental track
-            if np.max(np.abs(y)) > 0.02: 
+    try:
+        audio_for_pitch = input_audio_path
+        if vocals_path.exists():
+            try:
+                import librosa
+                import numpy as np
+                y, sr = librosa.load(vocals_path, sr=None, mono=True)
+                # If the vocal stem has very low volume, it's likely an instrumental track
+                if np.max(np.abs(y)) > 0.02:
+                    audio_for_pitch = vocals_path
+                else:
+                    print(f"[Demucs] Vocal stem is too quiet (Instrumental track). Bypassing stem separation.")
+            except Exception as e:
+                print(f"Error checking vocal volume: {e}")
                 audio_for_pitch = vocals_path
-            else:
-                print(f"[Demucs] Vocal stem is too quiet (Instrumental track). Bypassing stem separation.")
-        except Exception as e:
-            print(f"Error checking vocal volume: {e}")
-            audio_for_pitch = vocals_path
 
-    # 3. Generate Melody MIDI with Basic Pitch
-    print(f"[Basic Pitch] Extracting melody notes from {audio_for_pitch}...")
-    extract_melody(str(audio_for_pitch), output_dir=str(song_output_dir))
+        has_vocals = vocals_path.exists()
 
-    # Find the generated MIDI file from basic pitch
-    generated_midis = list(song_output_dir.glob("*.mid"))
-    if not generated_midis:
-        raise HTTPException(status_code=500, detail="Melody MIDI generation failed.")
+        # 3. Generate Melody MIDI with Basic Pitch
+        print(f"[Basic Pitch] Extracting melody notes from {audio_for_pitch}...")
+        extract_melody(str(audio_for_pitch), output_dir=str(song_output_dir))
 
-    target_melody_midi = song_output_dir / "vocals_basic_pitch.mid"
-    if generated_midis[0] != target_melody_midi:
-        if target_melody_midi.exists():
-            target_melody_midi.unlink()
-        shutil.move(str(generated_midis[0]), str(target_melody_midi))
+        # Find the generated MIDI file from basic pitch
+        generated_midis = list(song_output_dir.glob("*.mid"))
+        if not generated_midis:
+            raise HTTPException(status_code=500, detail="Melody MIDI generation failed.")
 
-    # 4. Create default Chords MIDI
-    chords_midi_path = song_output_dir / "chords.mid"
-    create_chords_midi(analysis_result["chords"], semitones=0, output_path=str(chords_midi_path))
+        target_melody_midi = song_output_dir / "vocals_basic_pitch.mid"
+        if generated_midis[0] != target_melody_midi:
+            if target_melody_midi.exists():
+                target_melody_midi.unlink()
+            shutil.move(str(generated_midis[0]), str(target_melody_midi))
 
-    return {
-        "song_name": song_name,
-        "bpm": analysis_result["bpm"],
-        "key": analysis_result["key"],
-        "key_root": analysis_result["key_root"],
-        "key_mode": analysis_result["key_mode"],
-        "chords": analysis_result["chords"],
-        "has_vocals": vocals_path.exists(),
-        "paths": {
-            "melody_midi": f"/download-melody/{song_name}",
-            "chords_midi": f"/download-chords/{song_name}"
+        # 4. Create default Chords MIDI
+        chords_midi_path = song_output_dir / "chords.mid"
+        create_chords_midi(analysis_result["chords"], semitones=0, output_path=str(chords_midi_path))
+
+        return {
+            "song_name": song_name,
+            "bpm": analysis_result["bpm"],
+            "key": analysis_result["key"],
+            "key_root": analysis_result["key_root"],
+            "key_mode": analysis_result["key_mode"],
+            "chords": analysis_result["chords"],
+            "has_vocals": has_vocals,
+            "paths": {
+                "melody_midi": f"/download-melody/{song_name}",
+                "chords_midi": f"/download-chords/{song_name}"
+            }
         }
-    }
+    finally:
+        if vocals_path.exists():
+            try:
+                shutil.rmtree(vocals_path.parent)
+            except OSError as e:
+                print(f"[Cleanup] Could not remove Demucs audio stems at {vocals_path.parent}: {e}")
 
 
 @app.post("/process-audio")
@@ -155,13 +221,23 @@ async def process_audio_file(file: UploadFile = File(...)):
     """Upload audio file or mic recording for analysis & extraction."""
     filename = file.filename or "recording.wav"
     song_name = Path(filename).stem.replace(" ", "_")
-    input_path = UPLOAD_DIR / filename
+    input_path: Optional[Path] = None
 
-    with open(input_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f"{song_name}_",
+            suffix=Path(filename).suffix,
+            dir=UPLOAD_DIR,
+            delete=False,
+        ) as temp_file:
+            input_path = Path(temp_file.name)
+            shutil.copyfileobj(file.file, temp_file)
 
-    res = process_audio_pipeline(input_path, song_name)
-    return JSONResponse(content=res)
+        res = process_audio_pipeline(input_path, song_name)
+        return JSONResponse(content=res)
+    finally:
+        if input_path is not None and input_path.exists():
+            input_path.unlink()
 
 
 @app.post("/process-url")
@@ -170,6 +246,7 @@ async def process_url(req: URLRequest):
     if not req.url or not req.url.strip():
         raise HTTPException(status_code=400, detail="URL cannot be empty.")
 
+    downloaded_file: Optional[Path] = None
     try:
         downloaded_file = download_audio_from_url(req.url.strip(), UPLOAD_DIR)
         song_name = downloaded_file.stem.replace(" ", "_")
@@ -177,6 +254,9 @@ async def process_url(req: URLRequest):
         return JSONResponse(content=res)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"URL Processing failed: {str(e)}")
+    finally:
+        if downloaded_file is not None and downloaded_file.exists():
+            downloaded_file.unlink()
 
 
 @app.get("/download-melody/{song_name}")
@@ -192,6 +272,7 @@ def download_melody(song_name: str, transpose: int = 0):
         target_path = OUTPUT_DIR / song_name / f"melody_transposed_{transpose}.mid"
         transpose_midi_file(str(orig_midi), str(target_path), transpose)
 
+    mark_output_downloaded(song_name)
     return FileResponse(
         path=target_path,
         filename=f"{song_name}_melody_key{transpose:+d}.mid",
@@ -209,6 +290,7 @@ def download_chords(song_name: str, transpose: int = 0):
     target_path = OUTPUT_DIR / song_name / f"chords_transposed_{transpose}.mid"
     transpose_midi_file(str(orig_midi), str(target_path), transpose)
 
+    mark_output_downloaded(song_name)
     return FileResponse(
         path=target_path,
         filename=f"{song_name}_chords_key{transpose:+d}.mid",
