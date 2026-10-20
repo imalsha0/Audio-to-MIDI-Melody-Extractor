@@ -443,13 +443,337 @@
     .download-group { grid-template-columns: 1fr; }
     .card { padding: 20px; }
   }
+
+  /* Studio dashboard refresh */
+  :root {
+    --bg-dark: #080a12;
+    --card-bg: rgba(17, 20, 32, 0.88);
+    --card-border: rgba(179, 187, 255, 0.12);
+    --primary-cyan: #8b8cff;
+    --primary-blue: #62c8ff;
+    --accent-orange: #ffb86b;
+    --accent-purple: #a78bfa;
+    --text-main: #f4f5ff;
+    --text-muted: #9ca3b8;
+    --glass-shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+  }
+
+  body {
+    position: relative;
+    overflow-x: hidden;
+    padding: 76px 24px 72px;
+    background:
+      radial-gradient(ellipse at 50% -20%, rgba(110, 105, 255, 0.22), transparent 48%),
+      radial-gradient(circle at 3% 42%, rgba(75, 172, 254, 0.08), transparent 30%),
+      radial-gradient(circle at 100% 76%, rgba(167, 139, 250, 0.1), transparent 32%),
+      var(--bg-dark);
+  }
+
+  body::before {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 48px 48px;
+    content: "";
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
+    pointer-events: none;
+  }
+
+  header {
+    position: relative;
+    max-width: 800px;
+    margin-bottom: 38px;
+  }
+
+  header::before {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 18px;
+    padding: 7px 12px;
+    border: 1px solid rgba(167, 139, 250, 0.24);
+    border-radius: 999px;
+    background: rgba(139, 140, 255, 0.08);
+    color: #c6c3ff;
+    content: "AI-POWERED AUDIO WORKSPACE";
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.35px;
+  }
+
+  .brand-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 12px;
+    background: none;
+    color: var(--text-main);
+    font-size: clamp(26px, 4vw, 36px);
+    font-weight: 750;
+    letter-spacing: -1.2px;
+    -webkit-text-fill-color: initial;
+  }
+
+  .brand-logo i {
+    display: inline-grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    background: linear-gradient(145deg, #8b8cff, #6176e8 58%, #62c8ff);
+    box-shadow: 0 8px 28px rgba(106, 120, 255, 0.32);
+    color: #fff;
+    font-size: 18px;
+    -webkit-text-fill-color: #fff;
+  }
+
+  .brand-logo img {
+    width: 82px;
+    height: 54px;
+    flex: 0 0 82px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(98, 200, 255, 0.2));
+  }
+
+  .brand-subtitle {
+    max-width: 600px;
+    margin: 0 auto;
+    color: #a7aec2;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .container { max-width: 840px; }
+
+  .card {
+    padding: 28px;
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    background: linear-gradient(145deg, rgba(21, 24, 39, 0.94), rgba(13, 16, 27, 0.92));
+    box-shadow: var(--glass-shadow), inset 0 1px rgba(255, 255, 255, 0.045);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  #inputCard:hover, #resultsSection:hover {
+    border-color: rgba(168, 166, 255, 0.24);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.4), 0 0 40px rgba(123, 117, 255, 0.055);
+  }
+
+  .tab-buttons {
+    gap: 5px;
+    margin-bottom: 25px;
+    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 13px;
+    background: rgba(7, 9, 16, 0.72);
+  }
+
+  .tab-btn {
+    min-height: 44px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: #949bb0;
+    font-size: 12px;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .tab-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.035);
+    color: #e6e8f4;
+  }
+
+  .tab-btn.active {
+    border-color: rgba(155, 151, 255, 0.24);
+    background: linear-gradient(135deg, rgba(139, 140, 255, 0.17), rgba(98, 200, 255, 0.09));
+    box-shadow: 0 4px 16px rgba(97, 106, 255, 0.1);
+    color: #c4c2ff;
+  }
+
+  .url-input-group i { color: #9b9dff; }
+
+  .input-field {
+    min-height: 56px;
+    border-color: rgba(175, 183, 218, 0.13);
+    border-radius: 12px;
+    background: rgba(7, 9, 16, 0.72);
+    color: var(--text-main);
+  }
+
+  .input-field::placeholder { color: #727a90; }
+
+  .input-field:focus {
+    border-color: rgba(151, 149, 255, 0.68);
+    box-shadow: 0 0 0 4px rgba(139, 140, 255, 0.1);
+  }
+
+  .dropzone, .recorder-box {
+    min-height: 174px;
+    border: 1px dashed rgba(165, 167, 214, 0.25);
+    border-radius: 14px;
+    background: rgba(7, 9, 16, 0.45);
+    transition: border-color 0.2s ease, background 0.2s ease;
+  }
+
+  .dropzone:hover, .dropzone.dragover {
+    border-color: #a19eff;
+    background: rgba(139, 140, 255, 0.07);
+  }
+
+  .dropzone i { color: #a19eff; }
+
+  .btn-submit {
+    min-height: 54px;
+    margin-top: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: linear-gradient(105deg, #a8a4ff, #7c83f4 52%, #6bc9ff);
+    box-shadow: 0 8px 28px rgba(112, 119, 255, 0.24);
+    font-size: 14px;
+    letter-spacing: 0.15px;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    box-shadow: 0 12px 34px rgba(112, 119, 255, 0.36);
+  }
+
+  .dashboard-grid { gap: 14px; }
+
+  .stat-card {
+    min-height: 96px;
+    border-color: rgba(174, 180, 219, 0.1);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(23, 27, 44, 0.9), rgba(12, 15, 25, 0.82));
+  }
+
+  .stat-icon {
+    border: 1px solid rgba(157, 154, 255, 0.14);
+    background: rgba(139, 140, 255, 0.1);
+    color: #aaa8ff;
+  }
+
+  .stat-label { color: #939bb1; font-size: 10px; letter-spacing: 1px; }
+  .stat-value { font-size: 21px; letter-spacing: -0.35px; }
+
+  .transpose-card {
+    border-color: rgba(174, 180, 219, 0.1);
+    border-radius: 14px;
+    background: rgba(8, 10, 18, 0.58);
+  }
+
+  .btn-transpose {
+    width: 40px;
+    height: 40px;
+    border-color: rgba(174, 180, 219, 0.16);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .btn-transpose:hover {
+    background: #a19eff;
+    color: #0b0c14;
+  }
+
+  .btn-transpose:focus-visible, .tab-btn:focus-visible, .record-btn:focus-visible,
+  .btn-download:focus-visible, .btn-submit:focus-visible {
+    outline: 2px solid #b5b2ff;
+    outline-offset: 3px;
+  }
+
+  .transpose-val { color: #ffbd7b; }
+
+  .chords-section-header { margin-bottom: 12px; }
+  .section-title { font-size: 14px; letter-spacing: 0.1px; }
+  .section-title i { color: #ffbd7b !important; }
+
+  .chords-grid {
+    gap: 9px;
+    min-height: 72px;
+    padding: 14px;
+    border-color: rgba(174, 180, 219, 0.1);
+    border-radius: 14px;
+    background: rgba(8, 10, 18, 0.58);
+  }
+
+  .chord-badge {
+    min-width: 76px;
+    border-color: rgba(255, 189, 123, 0.17);
+    border-radius: 10px;
+    background: linear-gradient(145deg, rgba(255, 189, 123, 0.09), rgba(167, 139, 250, 0.08));
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .chord-badge:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 189, 123, 0.42);
+  }
+
+  .chord-name { color: #ffc68e; }
+  .chord-time { color: #9299ad; }
+
+  .download-group { gap: 12px; }
+
+  .btn-download {
+    min-height: 54px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 12px;
+    font-size: 12px;
+    transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .btn-melody-dl {
+    background: linear-gradient(110deg, #aaa6ff, #7f87f5 65%, #73bdf7);
+    box-shadow: 0 6px 20px rgba(112, 119, 255, 0.17);
+  }
+
+  .btn-chords-dl {
+    background: linear-gradient(110deg, #f6a76e, #e8849a 58%, #bb8bed);
+    box-shadow: 0 6px 20px rgba(222, 129, 151, 0.14);
+  }
+
+  .btn-download:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 28px rgba(112, 119, 255, 0.22);
+  }
+
+  #progressSection { border-color: rgba(157, 154, 255, 0.2); }
+  .spinner { border-top-color: #aaa6ff; }
+  .status-subtext { line-height: 1.7; }
+
+  @media (max-width: 600px) {
+    body { padding: 48px 15px 40px; }
+    header { margin-bottom: 26px; }
+    header::before { margin-bottom: 15px; font-size: 9px; }
+    .brand-logo { flex-wrap: wrap; gap: 8px 10px; font-size: clamp(20px, 5vw, 27px); }
+    .brand-logo img { width: 68px; height: 42px; flex-basis: 68px; }
+    .brand-subtitle { max-width: 420px; font-size: 12px; }
+    .card { padding: 19px; border-radius: 17px; }
+    .tab-buttons { gap: 2px; padding: 4px; }
+    .tab-btn { min-height: 42px; padding: 9px 5px; gap: 5px; font-size: 10px; }
+    .input-field { min-height: 52px; padding-left: 44px; font-size: 12px; }
+    .download-group { grid-template-columns: 1fr; }
+    .transpose-card { align-items: flex-start; }
+    .chords-grid { max-height: 190px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 </style>
 </head>
 <body>
 
 <header>
   <div class="brand-logo">
-    <i class="fa-solid fa-wand-magic-sparkles"></i> Audio to MIDI & Chord Extractor
+    <img src="audio-midi-mark.png" alt="Audio to MIDI logo"> Audio to MIDI & Chord Extractor
   </div>
   <p class="brand-subtitle">Paste any Web URL, upload audio, or record voice to extract Melody MIDI, Chords, BPM & Transpose Key in real-time!</p>
 </header>
@@ -554,7 +878,7 @@
     <!-- Chords Grid ("Code Tika") -->
     <div class="chords-section-header">
       <div class="section-title">
-        <i class="fa-solid fa-guitar" style="color: var(--accent-orange);"></i> Detected Chords ("Code Tika")
+        <i class="fa-solid fa-guitar" style="color: var(--accent-orange);"></i> Detected Chords
       </div>
     </div>
     <div class="chords-grid" id="chordsGrid">
