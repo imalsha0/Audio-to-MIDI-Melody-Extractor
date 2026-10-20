@@ -684,6 +684,35 @@
 
   .transpose-val { color: #ffbd7b; }
 
+  html {
+    scrollbar-color: rgba(161, 158, 255, 0.7) #0d101b;
+    scrollbar-width: thin;
+  }
+
+  html::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  html::-webkit-scrollbar-track {
+    border-left: 1px solid rgba(161, 158, 255, 0.12);
+    background: #0d101b;
+  }
+
+  html::-webkit-scrollbar-thumb {
+    min-height: 42px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #62c8ff, #8b8cff 58%, #b8b4ff);
+    background-clip: padding-box;
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #86d7ff, #aaa6ff 58%, #d0ceff);
+    background-clip: padding-box;
+  }
+
+  html::-webkit-scrollbar-button { display: none; }
+
   .chords-section-header { margin-bottom: 12px; }
   .section-title { font-size: 14px; letter-spacing: 0.1px; }
   .section-title i { color: #ffbd7b !important; }
@@ -803,6 +832,232 @@
     text-align: center;
   }
 
+  .demo-section {
+    margin-top: 28px;
+    padding: 30px;
+  }
+
+  .demo-heading {
+    margin-bottom: 22px;
+    text-align: center;
+  }
+
+  .demo-eyebrow {
+    display: inline-block;
+    margin-bottom: 10px;
+    color: #b8b4ff;
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 1.4px;
+  }
+
+  .demo-heading h2 {
+    margin-bottom: 8px;
+    font-size: clamp(20px, 3vw, 27px);
+    letter-spacing: -0.6px;
+  }
+
+  .demo-heading p {
+    max-width: 570px;
+    margin: 0 auto;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .demo-card {
+    min-width: 0;
+    height: 100%;
+    padding: 17px;
+    border: 1px solid rgba(174, 180, 219, 0.11);
+    border-radius: 15px;
+    background: linear-gradient(145deg, rgba(23, 27, 44, 0.78), rgba(8, 10, 18, 0.72));
+    display: flex;
+    flex-direction: column;
+  }
+
+  .demo-card h3 {
+    min-height: 24px;
+    margin-bottom: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .demo-player {
+    width: 100%;
+    min-height: 48px;
+    margin-bottom: 14px;
+    padding: 5px 8px;
+    border: 1px solid rgba(174, 180, 219, 0.1);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.035);
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+  }
+
+  .demo-player > audio { display: none; }
+
+  .demo-player.wave-unavailable { grid-template-columns: minmax(0, 1fr); }
+  .demo-player.wave-unavailable > audio {
+    display: block;
+    width: 100%;
+    height: 38px;
+    accent-color: #a19eff;
+  }
+  .demo-player.wave-unavailable .wave-play,
+  .demo-player.wave-unavailable .waveform { display: none; }
+
+  .wave-play {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #f3f2ff;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .wave-play:hover { color: #b8b4ff; }
+  .wave-play:focus-visible, .waveform:focus-visible { outline: 2px solid #a19eff; outline-offset: 2px; }
+
+  .waveform {
+    width: 100%;
+    height: 34px;
+    min-width: 0;
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  .waveform canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .wave-status {
+    grid-column: 1 / -1;
+    min-height: 14px;
+    color: #ffb4ab;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .demo-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .demo-stat {
+    flex: 1;
+    padding: 9px 10px;
+    border: 1px solid rgba(174, 180, 219, 0.09);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .demo-stat-label {
+    display: block;
+    margin-bottom: 3px;
+    color: #9299ad;
+    font-size: 9px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+
+  .demo-stat strong {
+    font-size: 13px;
+  }
+
+  .demo-chords-label {
+    margin-bottom: 7px;
+    color: #9299ad;
+    font-size: 10px;
+  }
+
+  .demo-chords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 62px;
+    align-content: flex-start;
+    margin-bottom: 14px;
+  }
+
+  .demo-chord {
+    padding: 4px 7px;
+    border: 1px solid rgba(255, 189, 123, 0.15);
+    border-radius: 7px;
+    background: rgba(255, 189, 123, 0.06);
+    color: #ffc68e;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+  }
+
+  .demo-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+
+  .demo-actions .btn-preview {
+    min-height: 38px;
+    padding: 7px 5px;
+    font-size: 10px;
+  }
+
+  .demo-card .preview-status { margin-top: 8px; }
+
+  .demo-downloads {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 30px;
+    gap: 12px;
+    margin-top: 11px;
+  }
+
+  .demo-downloads a {
+    color: #b8b4ff;
+    font-size: 10px;
+    line-height: 1.5;
+    text-decoration: none;
+    text-align: center;
+  }
+
+  .demo-downloads a:hover { text-decoration: underline; }
+  .demo-card .demo-actions { margin-top: auto; }
+
+  .demo-attribution {
+    width: fit-content;
+    margin: 18px auto 0;
+    color: #9299ad;
+    font-size: 10px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .demo-attribution summary { cursor: pointer; }
+  .demo-attribution p { margin: 8px 0 0; }
+  .demo-attribution a { color: #b8b4ff; text-decoration: none; }
+  .demo-attribution a:hover { text-decoration: underline; }
+
+  @media (max-width: 800px) {
+    .demo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .demo-card:last-child { grid-column: 1 / -1; }
+  }
+
   #progressSection { border-color: rgba(157, 154, 255, 0.2); }
   .spinner { border-top-color: #aaa6ff; }
   .status-subtext { line-height: 1.7; }
@@ -821,6 +1076,9 @@
     .download-group { grid-template-columns: 1fr; }
     .transpose-card { align-items: flex-start; }
     .chords-grid { max-height: 190px; }
+    .demo-section { padding: 19px; }
+    .demo-grid { grid-template-columns: 1fr; }
+    .demo-card:last-child { grid-column: auto; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -969,8 +1227,105 @@
       </div>
       <div class="preview-status" id="previewStatus" aria-live="polite"></div>
     </div>
-
   </div>
+
+  <section class="card demo-section" id="demoSection" aria-labelledby="demoHeading">
+      <div class="demo-heading">
+        <span class="demo-eyebrow">AUDIO IN · MIDI OUT</span>
+        <h2 id="demoHeading">Audio to MIDI in Action</h2>
+        <p>Listen to each track, view its detected key and chords, and preview or download the generated MIDI.</p>
+      </div>
+
+      <div class="demo-grid">
+        <article class="demo-card">
+          <h3>Piano</h3>
+          <div class="demo-player">
+            <audio controls preload="metadata" src="demo-assets/demo-01.mp3" aria-label="Piano audio track"></audio>
+            <button class="wave-play" type="button" aria-label="Play Piano audio"><i class="fa-solid fa-play"></i></button>
+            <div class="waveform" role="slider" tabindex="0" aria-label="Piano audio position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <span class="wave-status" aria-live="polite"></span>
+          </div>
+          <div class="demo-stats">
+            <div class="demo-stat"><span class="demo-stat-label">Tempo</span><strong>80.7 BPM</strong></div>
+            <div class="demo-stat"><span class="demo-stat-label">Key</span><strong>G Major</strong></div>
+          </div>
+          <div class="demo-chords-label">Detected chords</div>
+          <div class="demo-chords"><span class="demo-chord">G</span><span class="demo-chord">Cmaj7</span><span class="demo-chord">Am7</span><span class="demo-chord">D</span><span class="demo-chord">Gmaj7</span><span class="demo-chord">+7 more</span></div>
+          <div class="demo-actions">
+            <button class="btn-preview" type="button" data-track="melody" data-midi-url="demo-assets/demo-01-melody.mid"><i class="fa-solid fa-play"></i> Melody</button>
+            <button class="btn-preview" type="button" data-track="chords" data-midi-url="demo-assets/demo-01-chords.mid"><i class="fa-solid fa-play"></i> Chords</button>
+          </div>
+          <div class="demo-downloads">
+            <a href="demo-assets/demo-01-melody.mid" download>Download melody MIDI</a>
+            <a href="demo-assets/demo-01-chords.mid" download>Download chords MIDI</a>
+          </div>
+          <div class="preview-status demo-preview-status" aria-live="polite"></div>
+        </article>
+
+        <article class="demo-card">
+          <h3>Melodic Track</h3>
+          <div class="demo-player">
+            <audio controls preload="metadata" src="demo-assets/royalty-free-short.mp3" aria-label="Melodic audio track"></audio>
+            <button class="wave-play" type="button" aria-label="Play melodic track audio"><i class="fa-solid fa-play"></i></button>
+            <div class="waveform" role="slider" tabindex="0" aria-label="Melodic track audio position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <span class="wave-status" aria-live="polite"></span>
+          </div>
+          <div class="demo-stats">
+            <div class="demo-stat"><span class="demo-stat-label">Tempo</span><strong>129.2 BPM</strong></div>
+            <div class="demo-stat"><span class="demo-stat-label">Key</span><strong>D Major</strong></div>
+          </div>
+          <div class="demo-chords-label">Detected chords</div>
+          <div class="demo-chords"><span class="demo-chord">Bmaj7</span><span class="demo-chord">Bm7</span><span class="demo-chord">Gmaj7</span><span class="demo-chord">Dmaj7</span><span class="demo-chord">D7</span></div>
+          <div class="demo-actions">
+            <button class="btn-preview" type="button" data-track="melody" data-midi-url="demo-assets/royalty-free-short-melody.mid"><i class="fa-solid fa-play"></i> Melody</button>
+            <button class="btn-preview" type="button" data-track="chords" data-midi-url="demo-assets/royalty-free-short-chords.mid"><i class="fa-solid fa-play"></i> Chords</button>
+          </div>
+          <div class="demo-downloads">
+            <a href="demo-assets/royalty-free-short-melody.mid" download>Download melody MIDI</a>
+            <a href="demo-assets/royalty-free-short-chords.mid" download>Download chords MIDI</a>
+          </div>
+          <div class="preview-status demo-preview-status" aria-live="polite"></div>
+        </article>
+
+        <article class="demo-card">
+          <h3>Guitar</h3>
+          <div class="demo-player">
+            <audio controls preload="metadata" src="demo-assets/demo-03.mp3" aria-label="Guitar audio track"></audio>
+            <button class="wave-play" type="button" aria-label="Play guitar audio"><i class="fa-solid fa-play"></i></button>
+            <div class="waveform" role="slider" tabindex="0" aria-label="Guitar audio position" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <span class="wave-status" aria-live="polite"></span>
+          </div>
+          <div class="demo-stats">
+            <div class="demo-stat"><span class="demo-stat-label">Tempo</span><strong>76.0 BPM</strong></div>
+            <div class="demo-stat"><span class="demo-stat-label">Key</span><strong>B Minor</strong></div>
+          </div>
+          <div class="demo-chords-label">Detected chords</div>
+          <div class="demo-chords"><span class="demo-chord">Bm</span><span class="demo-chord">F#m</span><span class="demo-chord">Dmaj7</span><span class="demo-chord">Em</span><span class="demo-chord">F#m7</span><span class="demo-chord">+2 more</span></div>
+          <div class="demo-actions">
+            <button class="btn-preview" type="button" data-track="melody" data-midi-url="demo-assets/demo-03-melody.mid"><i class="fa-solid fa-play"></i> Melody</button>
+            <button class="btn-preview" type="button" data-track="chords" data-midi-url="demo-assets/demo-03-chords.mid"><i class="fa-solid fa-play"></i> Chords</button>
+          </div>
+          <div class="demo-downloads">
+            <a href="demo-assets/demo-03-melody.mid" download>Download melody MIDI</a>
+            <a href="demo-assets/demo-03-chords.mid" download>Download chords MIDI</a>
+          </div>
+          <div class="preview-status demo-preview-status" aria-live="polite"></div>
+        </article>
+      </div>
+      <details class="demo-attribution">
+        <summary>Audio credits</summary>
+        <p>
+          <a href="https://youtu.be/IMLQFahPpuo" target="_blank" rel="noopener noreferrer">Marcelo Fernandez Music (CC BY)</a>
+          · <a href="https://youtu.be/U6cPjurCOmQ" target="_blank" rel="noopener noreferrer">ACB Studios (CC BY)</a>
+        </p>
+      </details>
+  </section>
 
 </div>
 
@@ -993,6 +1348,159 @@
 
   const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
+  function formatAudioTime(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${remainingSeconds}`;
+  }
+
+  function setupDemoAudioPlayers() {
+    document.querySelectorAll(".demo-player").forEach(player => {
+      const audio = player.querySelector("audio");
+      const playButton = player.querySelector(".wave-play");
+      const waveform = player.querySelector(".waveform");
+      const canvas = waveform.querySelector("canvas");
+      const status = player.querySelector(".wave-status");
+      const audioName = player.closest(".demo-card").querySelector("h3").textContent.trim();
+      let waveformPeaks = [];
+      let waveformScale = 0;
+      status.textContent = "Analyzing waveform...";
+
+      function drawWaveform() {
+        const bounds = canvas.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) return;
+
+        const pixelRatio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(bounds.width * pixelRatio);
+        canvas.height = Math.round(bounds.height * pixelRatio);
+        const context = canvas.getContext("2d");
+        context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+        const barCount = Math.max(32, Math.floor(bounds.width / 3.5));
+        const gap = 2;
+        const barWidth = Math.max(1, (bounds.width - gap * (barCount - 1)) / barCount);
+        const midpoint = bounds.height / 2;
+        const progress = audio.duration ? audio.currentTime / audio.duration : 0;
+
+        for (let index = 0; index < barCount; index++) {
+          const peakStart = Math.floor(index * waveformPeaks.length / barCount);
+          const peakEnd = Math.max(peakStart + 1, Math.floor((index + 1) * waveformPeaks.length / barCount));
+          let squaredAmplitudeSum = 0;
+          let samplesInRange = 0;
+          for (let peakIndex = peakStart; peakIndex < peakEnd; peakIndex++) {
+            squaredAmplitudeSum += waveformPeaks[peakIndex] ** 2;
+            samplesInRange++;
+          }
+          const amplitude = waveformScale && samplesInRange
+            ? Math.min(1, Math.sqrt(squaredAmplitudeSum / samplesInRange) / waveformScale)
+            : 0;
+          const barHeight = Math.max(1, amplitude * (bounds.height - 4));
+          const x = index * (barWidth + gap);
+          context.fillStyle = (index + 0.5) / barCount <= progress ? "#a19eff" : "#7c8090";
+          context.fillRect(x, midpoint - barHeight / 2, barWidth, barHeight);
+        }
+
+        waveform.setAttribute("aria-valuenow", String(Math.round(progress * 100)));
+        waveform.setAttribute("aria-valuetext", `${formatAudioTime(audio.currentTime)} of ${formatAudioTime(audio.duration)}`);
+      }
+
+      async function loadWaveform() {
+        try {
+          const response = await fetch(audio.src);
+          if (!response.ok) throw new Error(`Audio request failed (${response.status}).`);
+          const audioContext = midiAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+          midiAudioContext = audioContext;
+          const decodedAudio = await audioContext.decodeAudioData(await response.arrayBuffer());
+          const channelData = Array.from({ length: decodedAudio.numberOfChannels }, (_, index) => decodedAudio.getChannelData(index));
+          const peakCount = 2048;
+          const samplesPerPeak = Math.max(1, Math.floor(decodedAudio.length / peakCount));
+
+          waveformPeaks = Array.from({ length: peakCount }, (_, index) => {
+            const start = index * samplesPerPeak;
+            const end = Math.min(decodedAudio.length, start + samplesPerPeak);
+            let squaredAmplitudeSum = 0;
+            let samplesInRange = 0;
+            for (const samples of channelData) {
+              for (let sampleIndex = start; sampleIndex < end; sampleIndex++) {
+                squaredAmplitudeSum += samples[sampleIndex] ** 2;
+                samplesInRange++;
+              }
+            }
+            return samplesInRange ? Math.sqrt(squaredAmplitudeSum / samplesInRange) : 0;
+          });
+          const sortedLevels = [...waveformPeaks].sort((left, right) => left - right);
+          waveformScale = sortedLevels[Math.floor(sortedLevels.length * 0.95)] || 0;
+          status.textContent = "";
+          drawWaveform();
+        } catch (error) {
+          player.classList.add("wave-unavailable");
+          status.textContent = "Waveform analysis failed. Use the audio controls instead.";
+          console.error(`Could not render waveform for ${audio.src}:`, error);
+          drawWaveform();
+        }
+      }
+
+      playButton.addEventListener("click", async () => {
+        if (audio.paused) {
+          try {
+            await audio.play();
+          } catch (error) {
+            status.textContent = `Playback error: ${error.message}`;
+          }
+        } else {
+          audio.pause();
+        }
+      });
+
+      waveform.addEventListener("pointerdown", event => {
+        if (!audio.duration) return;
+        const bounds = waveform.getBoundingClientRect();
+        audio.currentTime = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width)) * audio.duration;
+        drawWaveform();
+      });
+
+      waveform.addEventListener("keydown", event => {
+        if (!audio.duration) return;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          const step = event.shiftKey ? 10 : 5;
+          audio.currentTime = Math.min(audio.duration, Math.max(0, audio.currentTime + (event.key === "ArrowRight" ? step : -step)));
+        } else if (event.key === "Home") {
+          audio.currentTime = 0;
+        } else if (event.key === "End") {
+          audio.currentTime = audio.duration;
+        } else {
+          return;
+        }
+        drawWaveform();
+      });
+
+      audio.addEventListener("play", () => {
+        playButton.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        playButton.setAttribute("aria-label", `Pause ${audioName} audio`);
+      });
+      audio.addEventListener("pause", () => {
+        playButton.innerHTML = '<i class="fa-solid fa-play"></i>';
+        playButton.setAttribute("aria-label", `Play ${audioName} audio`);
+      });
+      audio.addEventListener("timeupdate", drawWaveform);
+      audio.addEventListener("loadedmetadata", drawWaveform);
+      audio.addEventListener("ended", () => {
+        audio.currentTime = 0;
+        drawWaveform();
+      });
+      audio.addEventListener("error", () => {
+        status.textContent = "Audio could not be loaded.";
+      });
+      new ResizeObserver(drawWaveform).observe(waveform);
+      drawWaveform();
+      loadWaveform();
+    });
+  }
+
+  setupDemoAudioPlayers();
+
   function setPreviewButton(button, state) {
     const trackName = button.dataset.track === "melody" ? "Melody" : "Chords";
     button.disabled = state === "loading";
@@ -1005,6 +1513,12 @@
     } else {
       button.innerHTML = `<i class="fa-solid fa-play"></i> Preview ${trackName}`;
     }
+  }
+
+  function setPreviewStatus(button, message) {
+    const status = button.closest(".demo-card")?.querySelector(".demo-preview-status")
+      || document.getElementById("previewStatus");
+    status.textContent = message;
   }
 
   function stopMidiPreview(state = activeMidiPreview) {
@@ -1159,7 +1673,7 @@
   async function previewMidi(button) {
     if (activeMidiPreview && activeMidiPreview.button === button) {
       stopMidiPreview();
-      document.getElementById("previewStatus").textContent = "Preview stopped.";
+      setPreviewStatus(button, "Preview stopped.");
       return;
     }
     if (activeMidiPreview) stopMidiPreview();
@@ -1167,7 +1681,7 @@
     const previewState = { button, sources: new Set(), timeoutId: null, stopped: false };
     activeMidiPreview = previewState;
     setPreviewButton(button, "loading");
-    document.getElementById("previewStatus").textContent = "Loading MIDI preview...";
+    setPreviewStatus(button, "Loading MIDI preview...");
 
     try {
       const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
@@ -1177,10 +1691,15 @@
       }
       await midiAudioContext.resume();
 
-      const downloadButton = document.getElementById(
-        button.dataset.track === "melody" ? "downloadMelodyBtn" : "downloadChordsBtn"
-      );
-      const response = await fetch(downloadButton.href);
+      const downloadButton = button.dataset.midiUrl
+        ? null
+        : document.getElementById(
+            button.dataset.track === "melody" ? "downloadMelodyBtn" : "downloadChordsBtn"
+          );
+      const midiUrl = button.dataset.midiUrl
+        ? new URL(button.dataset.midiUrl, window.location.href).href
+        : downloadButton.href;
+      const response = await fetch(midiUrl);
       if (!response.ok) {
         let detail = "";
         try {
@@ -1223,18 +1742,17 @@
       });
 
       setPreviewButton(button, "playing");
-      document.getElementById("previewStatus").textContent =
-        `Playing ${button.dataset.track} MIDI preview.`;
+      setPreviewStatus(button, `Playing ${button.dataset.track} MIDI preview.`);
       previewState.timeoutId = setTimeout(() => {
         if (activeMidiPreview === previewState) {
           stopMidiPreview(previewState);
-          document.getElementById("previewStatus").textContent = "Preview finished.";
+          setPreviewStatus(button, "Preview finished.");
         }
       }, (lastEnd + 0.2) * 1000);
     } catch (error) {
       if (activeMidiPreview === previewState) {
         stopMidiPreview(previewState);
-        document.getElementById("previewStatus").textContent = `Preview error: ${error.message}`;
+        setPreviewStatus(button, `Preview error: ${error.message}`);
       }
     }
   }
@@ -1244,6 +1762,11 @@
   });
   document.getElementById("previewChordsBtn").addEventListener("click", event => {
     previewMidi(event.currentTarget);
+  });
+  document.querySelectorAll(".demo-card .btn-preview").forEach(button => {
+    button.addEventListener("click", event => {
+      previewMidi(event.currentTarget);
+    });
   });
 
   // Tab Switcher

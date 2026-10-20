@@ -11,3 +11,7 @@ after processing or the latest download, then are automatically removed.
 
 Generated melody and chord MIDI files can be previewed with a built-in
 synthesized tone in the browser before downloading.
+
+The frontend includes piano, melodic-track, and guitar audio-to-MIDI demos
+with waveform players. Creative Commons tracks credit their uploaders below
+the demo cards.
