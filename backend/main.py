@@ -13,9 +13,11 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import httpx
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from extract_melody import extract_melody
@@ -28,6 +30,9 @@ from audio_analyzer import (
 )
 
 app = FastAPI(title="Universal Audio to MIDI & Chord Extractor API")
+
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = PROJECT_DIR / "frontend"
 
 # Enable CORS for all origins and methods
 app.add_middleware(
@@ -43,6 +48,8 @@ OUTPUT_DIR = Path("output")
 SEPARATED_DIR = Path("separated")
 OUTPUT_RETENTION_SECONDS = 60 * 60
 OUTPUT_CLEANUP_INTERVAL_SECONDS = 60
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://aooiagzhcqfexqyddmrz.supabase.co")
+SUPABASE_PUBLISHABLE_KEY = os.getenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable__ZzBcSiuhdJ_mfeSyRNBuQ_YuTMLzEX")
 
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -53,6 +60,12 @@ cleanup_task: Optional[asyncio.Task] = None
 
 class URLRequest(BaseModel):
     url: str
+
+
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+    name: Optional[str] = None
 
 
 def cleanup_expired_outputs(now: Optional[float] = None) -> int:
@@ -105,7 +118,6 @@ def mark_output_downloaded(song_name: str):
         os.utime(song_output_dir, None)
 
 
-@app.get("/")
 @app.get("/health")
 def health_check():
     return {
@@ -113,6 +125,62 @@ def health_check():
         "message": "Universal Audio to MIDI API is running",
         "features": ["audio-upload", "url-extraction", "bpm-detection", "key-detection", "chord-recognition", "midi-export"]
     }
+
+
+async def supabase_auth_request(path: str, payload: dict) -> JSONResponse:
+    """Forward email/password authentication through the local server.
+
+    Some local browser setups route external requests through a proxy that
+    cannot reach Supabase. The backend uses a direct HTTPS connection instead.
+    """
+    headers = {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": f"Bearer {SUPABASE_PUBLISHABLE_KEY}",
+        "Content-Type": "application/json",
+    }
+    last_error: Optional[httpx.HTTPError] = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=20.0, trust_env=False) as client:
+                response = await client.post(f"{SUPABASE_URL}{path}", headers=headers, json=payload)
+            try:
+                content = response.json()
+            except ValueError:
+                content = {"message": "Supabase returned an invalid response."}
+            return JSONResponse(status_code=response.status_code, content=content)
+        except httpx.HTTPError as error:
+            last_error = error
+            if attempt < 2:
+                await asyncio.sleep(attempt + 1)
+
+    print(f"[Supabase Auth] Connection failed after retries: {type(last_error).__name__}: {last_error}")
+    raise HTTPException(status_code=503, detail="Cannot connect to Supabase authentication service.")
+
+
+@app.post("/auth/signup")
+async def auth_signup(request: AuthRequest):
+    return await supabase_auth_request(
+        "/auth/v1/signup",
+        {
+            "email": request.email,
+            "password": request.password,
+            "data": {"display_name": request.name or ""},
+        },
+    )
+
+
+@app.post("/auth/login")
+async def auth_login(request: AuthRequest):
+    return await supabase_auth_request(
+        "/auth/v1/token?grant_type=password",
+        {"email": request.email, "password": request.password},
+    )
+
+
+@app.get("/", include_in_schema=False)
+def frontend():
+    """Serve the browser interface from the same local server as the API."""
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 def process_audio_pipeline(input_audio_path: Path, song_name: str) -> dict:
@@ -296,3 +364,15 @@ def download_chords(song_name: str, transpose: int = 0):
         filename=f"{song_name}_chords_key{transpose:+d}.mid",
         media_type="audio/midi",
     )
+
+
+@app.get("/audio-midi-mark.png", include_in_schema=False)
+def logo():
+    return FileResponse(FRONTEND_DIR / "audio-midi-mark.png")
+
+
+app.mount(
+    "/demo-assets",
+    StaticFiles(directory=FRONTEND_DIR / "demo-assets"),
+    name="demo-assets",
+)

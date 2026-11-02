@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <!-- FontAwesome Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
   :root {
@@ -548,6 +549,134 @@
 
   .container { max-width: 840px; }
 
+  /* Authentication */
+  .site-auth {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+  }
+  .auth-btn {
+    min-height: 38px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(18, 21, 34, 0.86);
+    color: var(--text-main);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s ease;
+  }
+  .auth-btn.primary {
+    border-color: rgba(139, 140, 255, .48);
+    background: linear-gradient(135deg, #7779ee, #5b6ed8);
+    box-shadow: 0 8px 24px rgba(91, 110, 216, .22);
+  }
+  .auth-btn:hover { transform: translateY(-1px); border-color: rgba(139, 140, 255, .6); }
+  .user-menu {
+    display: none;
+    align-items: center;
+    gap: 9px;
+    padding: 5px 6px 5px 8px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 999px;
+    background: rgba(18,21,34,.86);
+  }
+  .user-avatar {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #62c8ff, #7779ee);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .user-name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 700; }
+  .logout-btn { border: 0; border-radius: 50%; background: transparent; color: #aeb4c8; cursor: pointer; padding: 7px; }
+
+  .auth-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    place-items: center;
+    padding: 12px;
+    background: rgba(3, 4, 10, .78);
+    backdrop-filter: blur(12px);
+  }
+  .auth-modal.open { display: grid; }
+  .auth-panel {
+    position: relative;
+    width: min(360px, 100%);
+    max-height: none;
+    overflow: hidden;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 24px;
+    background: linear-gradient(145deg, rgba(28,31,49,.98), rgba(13,16,27,.98));
+    box-shadow: 0 30px 100px rgba(0,0,0,.65);
+  }
+  .auth-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+    color: #b7bdce;
+    cursor: pointer;
+  }
+  .auth-title { margin-bottom: 4px; font-size: 23px; letter-spacing: -.6px; }
+  .auth-subtitle { margin-bottom: 14px; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+  .auth-form { display: grid; gap: 9px; }
+  .auth-form label { display: grid; gap: 5px; color: #cbd0df; font-size: 11px; font-weight: 700; }
+  .auth-form .input-field { padding-left: 14px; height: 42px; font-size: 13px; }
+  .auth-form .auth-name-row { display: none; }
+  .auth-form.signup .auth-name-row { display: grid; }
+  .auth-submit { height: 42px; border: 0; border-radius: 11px; background: linear-gradient(135deg, #7779ee, #5b6ed8); color: white; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .auth-divider { display: flex; align-items: center; gap: 10px; margin: 12px 0; color: #777f96; font-size: 10px; }
+  .auth-divider::before, .auth-divider::after { flex: 1; height: 1px; background: rgba(255,255,255,.08); content: ""; }
+  .google-btn {
+    width: 100%;
+    height: 42px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    background: #fff;
+    color: #333;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .google-btn i { color: #4285f4; font-size: 18px; }
+  .auth-switch { margin-top: 11px; text-align: center; color: #929aaf; font-size: 11px; }
+  .auth-switch button { border: 0; background: none; color: #8c91ff; font-weight: 800; cursor: pointer; }
+  .guest-continue {
+    width: 100%;
+    margin-top: 8px;
+    border: 0;
+    background: transparent;
+    color: #aeb4c8;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .guest-continue:hover { color: #d4d7e6; }
+  .auth-error { min-height: 0; color: #ff8a8a; font-size: 11px; text-align: center; }
+  .auth-error:not(:empty) { min-height: 16px; }
+
   .card {
     padding: 28px;
     border: 1px solid var(--card-border);
@@ -1065,6 +1194,10 @@
   @media (max-width: 600px) {
     body { padding: 48px 15px 40px; }
     header { margin-bottom: 26px; }
+    .site-auth { position: fixed; top: 10px; right: 12px; }
+    .site-auth .auth-btn { min-height: 34px; padding: 0 12px; font-size: 11px; }
+    .user-name { max-width: 80px; }
+    .auth-panel { padding: 18px; }
     header::before { margin-bottom: 15px; font-size: 9px; }
     .brand-logo { flex-wrap: wrap; gap: 8px 10px; font-size: clamp(20px, 5vw, 27px); }
     .brand-logo img { width: 68px; height: 42px; flex-basis: 68px; }
@@ -1081,6 +1214,23 @@
     .demo-card:last-child { grid-column: auto; }
   }
 
+  /* Keep every authentication control visible on short laptop and mobile viewports. */
+  @media (max-height: 650px) {
+    .auth-modal { padding: 8px; }
+    .auth-panel { width: min(350px, 100%); padding: 14px 16px; border-radius: 20px; }
+    .auth-close { top: 10px; right: 10px; width: 28px; height: 28px; }
+    .auth-title { margin-bottom: 2px; font-size: 21px; }
+    .auth-subtitle { margin-bottom: 10px; font-size: 11px; line-height: 1.3; }
+    .auth-form { gap: 6px; }
+    .auth-form label { gap: 4px; font-size: 10px; }
+    .auth-form .input-field,
+    .auth-submit,
+    .google-btn { height: 38px; font-size: 12px; }
+    .auth-divider { margin: 8px 0; font-size: 9px; }
+    .auth-switch { margin-top: 8px; font-size: 10px; }
+    .guest-continue { margin-top: 5px; font-size: 10px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       scroll-behavior: auto !important;
@@ -1094,6 +1244,15 @@
 <body>
 
 <header>
+  <div class="site-auth">
+    <button class="auth-btn" id="loginNavBtn">Log in</button>
+    <button class="auth-btn primary" id="signupNavBtn">Sign up</button>
+    <div class="user-menu" id="userMenu">
+      <div class="user-avatar" id="userAvatar">U</div>
+      <div class="user-name" id="userName">User</div>
+      <button class="logout-btn" id="logoutBtn" title="Log out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+    </div>
+  </div>
   <div class="brand-logo">
     <img src="audio-midi-mark.png" alt="Audio to MIDI logo"> Audio to MIDI & Chord Extractor
   </div>
@@ -1329,13 +1488,229 @@
 
 </div>
 
+<div class="auth-modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="auth-panel">
+    <button class="auth-close" id="authClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="auth-title" id="authTitle">Welcome back</h2>
+    <p class="auth-subtitle" id="authSubtitle">Log in to keep your studio workspace and downloads organized.</p>
+    <form class="auth-form" id="authForm" novalidate>
+      <label class="auth-name-row">Name
+        <input class="input-field" id="authName" type="text" autocomplete="name" placeholder="Your name">
+      </label>
+      <label>Email address
+        <input class="input-field" id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com">
+      </label>
+      <label>Password
+        <input class="input-field" id="authPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="At least 6 characters">
+      </label>
+      <button class="auth-submit" id="authSubmit" type="submit">Log in</button>
+      <div class="auth-error" id="authError" role="alert"></div>
+    </form>
+    <div class="auth-divider">or continue with</div>
+    <button class="google-btn" id="googleAuthBtn" type="button"><i class="fa-brands fa-google"></i> Continue with Google</button>
+    <div class="auth-switch"><span id="authSwitchText">New to the studio?</span> <button id="authSwitchBtn" type="button">Create an account</button></div>
+    <button class="guest-continue" id="continueAsGuestBtn" type="button">Continue without login - extract freely</button>
+  </div>
+</div>
+
+<div id="googleButtonHost" hidden></div>
+
 <script>
   const API_URL = "http://127.0.0.1:8000";
+  const SUPABASE_URL = "https://aooiagzhcqfexqyddmrz.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable__ZzBcSiuhdJ_mfeSyRNBuQ_YuTMLzEX";
+  const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const authModal = document.getElementById("authModal");
+  const authForm = document.getElementById("authForm");
+  const authTitle = document.getElementById("authTitle");
+  const authSubtitle = document.getElementById("authSubtitle");
+  const authError = document.getElementById("authError");
+  let authMode = "login";
+
+  function showAuthError(error) {
+    const message = error?.message || error?.msg || error?.error_description || error?.detail || "Authentication failed. Please try again.";
+    authError.textContent = /failed to fetch|network/i.test(message)
+      ? "Cannot reach Supabase. Check your internet connection or network firewall, then try again."
+      : message;
+  }
+
+  async function localAuthRequest(path, payload) {
+    const response = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw data;
+    return data;
+  }
+
+  function getCurrentUser() {
+    try { return JSON.parse(localStorage.getItem("supabaseStudioUser") || "null"); }
+    catch { return null; }
+  }
+
+  function setCurrentUser(user) {
+    if (user) localStorage.setItem("supabaseStudioUser", JSON.stringify(user));
+    else localStorage.removeItem("supabaseStudioUser");
+    renderAuthState();
+  }
+
+  function renderAuthState() {
+    const user = getCurrentUser();
+    const loginBtn = document.getElementById("loginNavBtn");
+    const signupBtn = document.getElementById("signupNavBtn");
+    const userMenu = document.getElementById("userMenu");
+    if (user) {
+      loginBtn.style.display = "none";
+      signupBtn.style.display = "none";
+      userMenu.style.display = "flex";
+      document.getElementById("userName").textContent = user.name || user.email;
+      document.getElementById("userAvatar").textContent = (user.name || user.email || "U").charAt(0).toUpperCase();
+    } else {
+      loginBtn.style.display = "";
+      signupBtn.style.display = "";
+      userMenu.style.display = "none";
+    }
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    const signup = mode === "signup";
+    authForm.classList.toggle("signup", signup);
+    authTitle.textContent = signup ? "Create your account" : "Welcome back";
+    authSubtitle.textContent = signup
+      ? "Sign up once and start turning audio into MIDI from this studio."
+      : "Log in to keep your studio workspace and downloads organized.";
+    document.getElementById("authSubmit").textContent = signup ? "Create account" : "Log in";
+    document.getElementById("authSwitchText").textContent = signup ? "Already have an account?" : "New to the studio?";
+    document.getElementById("authSwitchBtn").textContent = signup ? "Log in" : "Create an account";
+    document.getElementById("authPassword").autocomplete = signup ? "new-password" : "current-password";
+    authError.textContent = "";
+  }
+
+  function openAuth(mode = "login") {
+    setAuthMode(mode);
+    authModal.classList.add("open");
+    setTimeout(() => document.getElementById(authMode === "signup" ? "authName" : "authEmail").focus(), 50);
+  }
+
+  function closeAuth() {
+    authModal.classList.remove("open");
+    authForm.reset();
+    authError.textContent = "";
+  }
+
+  authForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    authError.textContent = "";
+    const email = document.getElementById("authEmail").value.trim().toLowerCase();
+    const password = document.getElementById("authPassword").value;
+    const name = document.getElementById("authName").value.trim();
+
+    if (!email || password.length < 6) {
+      authError.textContent = "Enter a valid email and a password with at least 6 characters.";
+      return;
+    }
+
+    try {
+      if (authMode === "signup") {
+        if (!name) {
+          authError.textContent = "Please enter your name.";
+          return;
+        }
+        const data = await localAuthRequest("/auth/signup", { email, password, name });
+        if (!data.session) {
+          authError.textContent = "Check your email and confirm the signup link.";
+          return;
+        }
+        setCurrentUser({ name, email });
+        closeAuth();
+        return;
+      }
+
+      const data = await localAuthRequest("/auth/login", { email, password });
+      const user = data.user;
+      setCurrentUser({
+        name: user.user_metadata?.display_name || user.user_metadata?.full_name || email,
+        email: user.email
+      });
+      closeAuth();
+    } catch (error) {
+      showAuthError(error);
+    }
+  });
+
+  document.getElementById("loginNavBtn").addEventListener("click", () => openAuth("login"));
+  document.getElementById("signupNavBtn").addEventListener("click", () => openAuth("signup"));
+  document.getElementById("authClose").addEventListener("click", closeAuth);
+  document.getElementById("authSwitchBtn").addEventListener("click", () => setAuthMode(authMode === "login" ? "signup" : "login"));
+  document.getElementById("continueAsGuestBtn").addEventListener("click", closeAuth);
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try { await supabaseClient?.auth.signOut(); } catch { /* Clear this local app session regardless. */ }
+    setCurrentUser(null);
+  });
+  authModal.addEventListener("click", event => {
+    if (event.target === authModal) closeAuth();
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && authModal.classList.contains("open")) closeAuth();
+  });
+
+  document.getElementById("googleAuthBtn").addEventListener("click", async () => {
+    try {
+      if (!supabaseClient) throw new Error("Google login is unavailable because the Supabase browser client did not load.");
+      const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/" }
+      });
+      if (error) showAuthError(error);
+    } catch (error) {
+      showAuthError(error);
+    }
+  });
+
+  async function restoreSupabaseSession() {
+    if (getCurrentUser()) {
+      renderAuthState();
+      return;
+    }
+    try {
+      const { data: { session } } = await supabaseClient?.auth.getSession() || { data: { session: null } };
+      const user = session?.user;
+      if (user) {
+        setCurrentUser({
+          name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email,
+          email: user.email
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    } catch {
+      setCurrentUser(null);
+    }
+  }
+
+  supabaseClient?.auth.onAuthStateChange((_event, session) => {
+    const user = session?.user;
+    setCurrentUser(user ? {
+      name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email,
+      email: user.email
+    } : null);
+  });
+  restoreSupabaseSession();
+
+  const requestedAuthMode = new URLSearchParams(window.location.search).get("auth");
+  if (requestedAuthMode === "login" || requestedAuthMode === "signup") {
+    window.addEventListener("load", () => openAuth(requestedAuthMode), { once: true });
+  }
   
   // State
   let currentTab = "urlPane";
   let selectedFile = null;
   let recordedBlob = null;
+  let recordedFilename = "mic_recording.webm";
   let mediaRecorder = null;
   let audioChunks = [];
   let currentSongName = "";
@@ -1813,12 +2188,24 @@
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
+        const supportedMimeTypes = [
+          "audio/webm;codecs=opus",
+          "audio/webm",
+          "audio/ogg;codecs=opus"
+        ];
+        const mimeType = supportedMimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
         audioChunks = [];
 
-        mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
         mediaRecorder.onstop = () => {
-          recordedBlob = new Blob(audioChunks, { type: 'audio/wav' });
+          const recordingMimeType = mediaRecorder.mimeType || audioChunks[0]?.type || "audio/webm";
+          const extension = recordingMimeType.includes("ogg") ? "ogg" : "webm";
+          recordedFilename = `mic_recording.${extension}`;
+          recordedBlob = new Blob(audioChunks, { type: recordingMimeType });
+          stream.getTracks().forEach((track) => track.stop());
           recordStatusText.textContent = `Recorded: ${(recordedBlob.size/1024).toFixed(1)} KB voice audio ready!`;
         };
 
@@ -1862,7 +2249,7 @@
       if (!recordedBlob) { alert("Please record your voice first!"); return; }
       endpoint = `${API_URL}/process-audio`;
       const formData = new FormData();
-      formData.append("file", recordedBlob, "mic_recording.wav");
+      formData.append("file", recordedBlob, recordedFilename);
       body = formData;
     }
 

@@ -21,3 +21,9 @@ backend/output/
 backend/separated/
 backend/test_audio/*.mp3
 backend/test_audio/*.wav
+
+# Local working files when the server is started from the project root
+output/
+uploads/
+separated/
+.venv310/
