@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: audio-to-midi-melody-extractor-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.11

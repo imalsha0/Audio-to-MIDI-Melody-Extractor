@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="audio-midi-api-url" content="">
 <title>Audio to MIDI & Chord Extractor | Studio Suite</title>
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -587,18 +588,39 @@
     border-radius: 999px;
     background: rgba(18,21,34,.86);
   }
+  .profile-open-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 190px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
   .user-avatar {
+    position: relative;
     display: grid;
     width: 30px;
     height: 30px;
+    flex: 0 0 30px;
     place-items: center;
+    overflow: hidden;
     border-radius: 50%;
     background: linear-gradient(135deg, #62c8ff, #7779ee);
     font-size: 12px;
     font-weight: 800;
   }
+  .user-avatar img,
+  .profile-avatar img { display: none; width: 100%; height: 100%; object-fit: cover; }
+  .user-avatar.has-image img,
+  .profile-avatar.has-image img { display: block; }
+  .user-avatar.has-image .avatar-fallback,
+  .profile-avatar.has-image .avatar-fallback { display: none; }
   .user-name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 700; }
-  .logout-btn { border: 0; border-radius: 50%; background: transparent; color: #aeb4c8; cursor: pointer; padding: 7px; }
 
   .auth-modal {
     position: fixed;
@@ -662,20 +684,62 @@
   .google-btn i { color: #4285f4; font-size: 18px; }
   .auth-switch { margin-top: 11px; text-align: center; color: #929aaf; font-size: 11px; }
   .auth-switch button { border: 0; background: none; color: #8c91ff; font-weight: 800; cursor: pointer; }
-  .guest-continue {
-    width: 100%;
-    margin-top: 8px;
-    border: 0;
-    background: transparent;
-    color: #aeb4c8;
-    font-family: inherit;
+  .auth-error { min-height: 0; color: #ff8a8a; font-size: 11px; text-align: center; }
+  .auth-error:not(:empty) { min-height: 16px; }
+  .profile-panel {
+    width: min(430px, 100%);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .profile-panel::-webkit-scrollbar { display: none; }
+  .profile-photo-row { display: flex; align-items: center; gap: 14px; margin: 18px 0; }
+  .profile-avatar {
+    display: grid;
+    width: 76px;
+    height: 76px;
+    flex: 0 0 76px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #62c8ff, #7779ee);
+    color: #fff;
+    font-size: 27px;
+    font-weight: 800;
+  }
+  .profile-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .profile-photo-actions button,
+  .profile-secondary-btn {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+    color: #e7e9f2;
+    font: inherit;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
   }
-  .guest-continue:hover { color: #d4d7e6; }
-  .auth-error { min-height: 0; color: #ff8a8a; font-size: 11px; text-align: center; }
-  .auth-error:not(:empty) { min-height: 16px; }
+  .profile-photo-actions button:hover,
+  .profile-secondary-btn:hover { background: rgba(255,255,255,.11); }
+  .profile-logout-btn { display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: #ffaaaa; }
+  .profile-form { display: grid; gap: 10px; }
+  .profile-form label { display: grid; gap: 5px; color: #cbd0df; font-size: 11px; font-weight: 700; }
+  .profile-form .input-field { padding-left: 14px; height: 40px; font-size: 13px; }
+  .profile-form .input-field:disabled { opacity: .7; }
+  .profile-status { min-height: 0; color: #aeb4c8; font-size: 11px; line-height: 1.45; }
+  .profile-status:not(:empty) { min-height: 16px; }
+  .profile-status.is-error { color: #ff8a8a; }
+  .profile-status.is-success { color: #80dfb0; }
+  .profile-security { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); }
+  .profile-security h3 { margin: 0 0 5px; font-size: 14px; }
+  .profile-security p { margin: 0 0 10px; color: #929aaf; font-size: 11px; line-height: 1.5; }
+  .profile-security-form { display: grid; gap: 9px; }
+  .profile-security-form label { display: grid; gap: 5px; color: #cbd0df; font-size: 11px; font-weight: 700; }
+  .profile-security-form .input-field { padding-left: 14px; height: 40px; font-size: 13px; }
 
   .card {
     padding: 28px;
@@ -1217,6 +1281,9 @@
   /* Keep every authentication control visible on short laptop and mobile viewports. */
   @media (max-height: 650px) {
     .auth-modal { padding: 8px; }
+  .profile-panel { padding: 16px; }
+  .profile-photo-row { gap: 10px; }
+  .profile-avatar { width: 64px; height: 64px; flex-basis: 64px; }
     .auth-panel { width: min(350px, 100%); padding: 14px 16px; border-radius: 20px; }
     .auth-close { top: 10px; right: 10px; width: 28px; height: 28px; }
     .auth-title { margin-bottom: 2px; font-size: 21px; }
@@ -1228,7 +1295,6 @@
     .google-btn { height: 38px; font-size: 12px; }
     .auth-divider { margin: 8px 0; font-size: 9px; }
     .auth-switch { margin-top: 8px; font-size: 10px; }
-    .guest-continue { margin-top: 5px; font-size: 10px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1248,9 +1314,10 @@
     <button class="auth-btn" id="loginNavBtn">Log in</button>
     <button class="auth-btn primary" id="signupNavBtn">Sign up</button>
     <div class="user-menu" id="userMenu">
-      <div class="user-avatar" id="userAvatar">U</div>
-      <div class="user-name" id="userName">User</div>
-      <button class="logout-btn" id="logoutBtn" title="Log out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+      <button class="profile-open-btn" id="profileNavBtn" type="button" aria-label="Open profile settings">
+        <span class="user-avatar" id="userAvatar"><img id="userAvatarImage" alt="Profile photo"><span class="avatar-fallback" id="userAvatarFallback">U</span></span>
+        <span class="user-name" id="userName">User</span>
+      </button>
     </div>
   </div>
   <div class="brand-logo">
@@ -1492,7 +1559,7 @@
   <div class="auth-panel">
     <button class="auth-close" id="authClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
     <h2 class="auth-title" id="authTitle">Welcome back</h2>
-    <p class="auth-subtitle" id="authSubtitle">Log in to keep your studio workspace and downloads organized.</p>
+    <p class="auth-subtitle" id="authSubtitle">Log in to extract melody, chords, and MIDI.</p>
     <form class="auth-form" id="authForm" novalidate>
       <label class="auth-name-row">Name
         <input class="input-field" id="authName" type="text" autocomplete="name" placeholder="Your name">
@@ -1509,14 +1576,62 @@
     <div class="auth-divider">or continue with</div>
     <button class="google-btn" id="googleAuthBtn" type="button"><i class="fa-brands fa-google"></i> Continue with Google</button>
     <div class="auth-switch"><span id="authSwitchText">New to the studio?</span> <button id="authSwitchBtn" type="button">Create an account</button></div>
-    <button class="guest-continue" id="continueAsGuestBtn" type="button">Continue without login - extract freely</button>
+  </div>
+</div>
+
+<div class="auth-modal profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+  <div class="auth-panel profile-panel">
+    <button class="auth-close" id="profileClose" aria-label="Close profile settings"><i class="fa-solid fa-xmark"></i></button>
+    <h2 class="auth-title" id="profileTitle">Profile settings</h2>
+    <p class="auth-subtitle">Update the details people see when you use the studio.</p>
+
+    <div class="profile-photo-row">
+      <div class="profile-avatar" id="profileAvatar">
+        <img id="profileAvatarImage" alt="Your profile photo">
+        <span class="avatar-fallback" id="profileAvatarFallback">U</span>
+      </div>
+      <div>
+        <div class="profile-photo-actions">
+          <button type="button" id="chooseAvatarBtn">Choose photo</button>
+          <button type="button" id="removeAvatarBtn">Remove</button>
+        </div>
+        <input id="profileAvatarInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      </div>
+    </div>
+
+    <form class="profile-form" id="profileForm" novalidate>
+      <label for="profileName">Display name
+        <input class="input-field" id="profileName" type="text" maxlength="80" autocomplete="name" placeholder="Your name" required>
+      </label>
+      <label for="profileEmail">Email address
+        <input class="input-field" id="profileEmail" type="email" readonly disabled>
+      </label>
+      <div class="profile-status" id="profileStatus" role="status" aria-live="polite"></div>
+      <button class="auth-submit" id="profileSaveBtn" type="submit">Save profile</button>
+    </form>
+
+    <section class="profile-security" aria-labelledby="passwordTitle">
+      <h3 id="passwordTitle">Change password</h3>
+      <form class="profile-security-form" id="passwordForm" novalidate>
+        <label for="profileNewPassword">New password
+          <input class="input-field" id="profileNewPassword" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+        </label>
+        <div class="profile-status" id="passwordStatus" role="status" aria-live="polite"></div>
+        <button class="profile-secondary-btn" id="passwordSaveBtn" type="submit">Update password</button>
+      </form>
+    </section>
+    <button class="profile-secondary-btn profile-logout-btn" id="profileLogoutBtn" type="button">
+      <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Log out
+    </button>
   </div>
 </div>
 
 <div id="googleButtonHost" hidden></div>
 
 <script>
-  const API_URL = "http://127.0.0.1:8000";
+  const configuredApiUrl = document.querySelector('meta[name="audio-midi-api-url"]')?.content.trim();
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const API_URL = (configuredApiUrl || (isLocalHost ? "http://127.0.0.1:8000" : window.location.origin)).replace(/\/+$/, "");
   const SUPABASE_URL = "https://aooiagzhcqfexqyddmrz.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable__ZzBcSiuhdJ_mfeSyRNBuQ_YuTMLzEX";
   const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1526,6 +1641,11 @@
   const authTitle = document.getElementById("authTitle");
   const authSubtitle = document.getElementById("authSubtitle");
   const authError = document.getElementById("authError");
+  const profileModal = document.getElementById("profileModal");
+  const profileForm = document.getElementById("profileForm");
+  const profileStatus = document.getElementById("profileStatus");
+  const passwordForm = document.getElementById("passwordForm");
+  const passwordStatus = document.getElementById("passwordStatus");
   let authMode = "login";
 
   function showAuthError(error) {
@@ -1546,19 +1666,72 @@
     return data;
   }
 
-  function getCurrentUser() {
-    try { return JSON.parse(localStorage.getItem("supabaseStudioUser") || "null"); }
-    catch { return null; }
+  let currentAuthUser = null;
+  let currentAvatarUrl = "";
+  let avatarLoadSequence = 0;
+  let selectedAvatarFile = null;
+  let profilePreviewUrl = "";
+
+  function userDisplayName(user = currentAuthUser) {
+    const metadata = user?.user_metadata || {};
+    return metadata.display_name || metadata.full_name || metadata.name || user?.name || user?.email || "User";
+  }
+
+  function paintAvatar(containerId, imageId, fallbackId, url, name) {
+    const container = document.getElementById(containerId);
+    const image = document.getElementById(imageId);
+    const fallback = document.getElementById(fallbackId);
+    const initial = (name || "U").trim().charAt(0).toUpperCase() || "U";
+    fallback.textContent = initial;
+    container.classList.toggle("has-image", Boolean(url));
+    if (url) image.src = url;
+    else image.removeAttribute("src");
+  }
+
+  function paintProfileAvatar() {
+    const user = currentAuthUser;
+    const name = userDisplayName(user);
+    paintAvatar("userAvatar", "userAvatarImage", "userAvatarFallback", currentAvatarUrl, name);
+    paintAvatar("profileAvatar", "profileAvatarImage", "profileAvatarFallback", profilePreviewUrl || currentAvatarUrl, name);
+  }
+
+  async function refreshAvatarUrl(user) {
+    const sequence = ++avatarLoadSequence;
+    const path = user?.user_metadata?.avatar_path;
+    currentAvatarUrl = "";
+    paintProfileAvatar();
+    if (!path || !supabaseClient) return;
+    try {
+      const { data, error } = await supabaseClient.storage.from("avatars").createSignedUrl(path, 86400);
+      if (error) throw error;
+      if (sequence !== avatarLoadSequence || currentAuthUser?.id !== user.id) return;
+      currentAvatarUrl = data.signedUrl;
+      paintProfileAvatar();
+    } catch (error) {
+      console.warn("Could not load the profile photo.", error);
+    }
   }
 
   function setCurrentUser(user) {
-    if (user) localStorage.setItem("supabaseStudioUser", JSON.stringify(user));
-    else localStorage.removeItem("supabaseStudioUser");
+    currentAuthUser = user || null;
     renderAuthState();
+    void refreshAvatarUrl(currentAuthUser);
+  }
+
+  async function requireSignedInSession() {
+    if (!supabaseClient) throw new Error("The Supabase browser client did not load. Refresh the page and try again.");
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) throw error;
+    if (!data.session) {
+      openAuth("login");
+      return null;
+    }
+    if (currentAuthUser?.id !== data.session.user.id) setCurrentUser(data.session.user);
+    return data.session;
   }
 
   function renderAuthState() {
-    const user = getCurrentUser();
+    const user = currentAuthUser;
     const loginBtn = document.getElementById("loginNavBtn");
     const signupBtn = document.getElementById("signupNavBtn");
     const userMenu = document.getElementById("userMenu");
@@ -1566,12 +1739,19 @@
       loginBtn.style.display = "none";
       signupBtn.style.display = "none";
       userMenu.style.display = "flex";
-      document.getElementById("userName").textContent = user.name || user.email;
-      document.getElementById("userAvatar").textContent = (user.name || user.email || "U").charAt(0).toUpperCase();
+      document.getElementById("userName").textContent = userDisplayName(user);
+      document.getElementById("profileName").value = userDisplayName(user);
+      document.getElementById("profileEmail").value = user.email || "";
+      paintProfileAvatar();
     } else {
       loginBtn.style.display = "";
       signupBtn.style.display = "";
       userMenu.style.display = "none";
+      const results = document.getElementById("resultsSection");
+      if (results) results.style.display = "none";
+      currentAvatarUrl = "";
+      avatarLoadSequence += 1;
+      paintProfileAvatar();
     }
   }
 
@@ -1581,8 +1761,8 @@
     authForm.classList.toggle("signup", signup);
     authTitle.textContent = signup ? "Create your account" : "Welcome back";
     authSubtitle.textContent = signup
-      ? "Sign up once and start turning audio into MIDI from this studio."
-      : "Log in to keep your studio workspace and downloads organized.";
+      ? "Create an account to extract melody, chords, and MIDI."
+      : "Log in to extract melody, chords, and MIDI.";
     document.getElementById("authSubmit").textContent = signup ? "Create account" : "Log in";
     document.getElementById("authSwitchText").textContent = signup ? "Already have an account?" : "New to the studio?";
     document.getElementById("authSwitchBtn").textContent = signup ? "Log in" : "Create an account";
@@ -1614,6 +1794,8 @@
       return;
     }
 
+    const submitButton = document.getElementById("authSubmit");
+    submitButton.disabled = true;
     try {
       if (authMode === "signup") {
         if (!name) {
@@ -1621,24 +1803,34 @@
           return;
         }
         const data = await localAuthRequest("/auth/signup", { email, password, name });
-        if (!data.session) {
+        if (!data.access_token || !data.refresh_token) {
           authError.textContent = "Check your email and confirm the signup link.";
           return;
         }
-        setCurrentUser({ name, email });
+        if (!supabaseClient) throw new Error("The Supabase browser client did not load. Refresh the page and try again.");
+        const { data: sessionData, error } = await supabaseClient.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token
+        });
+        if (error) throw error;
+        setCurrentUser(sessionData.user);
         closeAuth();
         return;
       }
 
       const data = await localAuthRequest("/auth/login", { email, password });
-      const user = data.user;
-      setCurrentUser({
-        name: user.user_metadata?.display_name || user.user_metadata?.full_name || email,
-        email: user.email
+      if (!supabaseClient) throw new Error("The Supabase browser client did not load. Refresh the page and try again.");
+      const { data: sessionData, error } = await supabaseClient.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token
       });
+      if (error) throw error;
+      setCurrentUser(sessionData.user);
       closeAuth();
     } catch (error) {
       showAuthError(error);
+    } finally {
+      submitButton.disabled = false;
     }
   });
 
@@ -1646,16 +1838,180 @@
   document.getElementById("signupNavBtn").addEventListener("click", () => openAuth("signup"));
   document.getElementById("authClose").addEventListener("click", closeAuth);
   document.getElementById("authSwitchBtn").addEventListener("click", () => setAuthMode(authMode === "login" ? "signup" : "login"));
-  document.getElementById("continueAsGuestBtn").addEventListener("click", closeAuth);
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    try { await supabaseClient?.auth.signOut(); } catch { /* Clear this local app session regardless. */ }
-    setCurrentUser(null);
+  document.getElementById("profileNavBtn").addEventListener("click", () => {
+    if (!currentAuthUser) return openAuth("login");
+    document.getElementById("profileName").value = userDisplayName();
+    document.getElementById("profileEmail").value = currentAuthUser.email || "";
+    document.getElementById("profileStatus").textContent = "";
+    document.getElementById("profileStatus").className = "profile-status";
+    document.getElementById("passwordStatus").textContent = "";
+    document.getElementById("passwordStatus").className = "profile-status";
+    document.getElementById("profileNewPassword").value = "";
+    document.getElementById("profileAvatarInput").value = "";
+    selectedAvatarFile = null;
+    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    profilePreviewUrl = "";
+    paintProfileAvatar();
+    profileModal.classList.add("open");
+    setTimeout(() => document.getElementById("profileName").focus(), 50);
+  });
+  document.getElementById("profileClose").addEventListener("click", () => profileModal.classList.remove("open"));
+  profileModal.addEventListener("click", event => {
+    if (event.target === profileModal) profileModal.classList.remove("open");
+  });
+  document.getElementById("chooseAvatarBtn").addEventListener("click", () => {
+    document.getElementById("profileAvatarInput").click();
+  });
+  document.getElementById("profileAvatarInput").addEventListener("change", event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      profileStatus.textContent = "Choose a PNG, JPG, WebP, or GIF image.";
+      profileStatus.className = "profile-status is-error";
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      profileStatus.textContent = "Choose an image smaller than 5 MB.";
+      profileStatus.className = "profile-status is-error";
+      event.target.value = "";
+      return;
+    }
+    if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+    selectedAvatarFile = file;
+    profilePreviewUrl = URL.createObjectURL(file);
+    paintProfileAvatar();
+    profileStatus.textContent = "Photo selected. Save your profile to upload it.";
+    profileStatus.className = "profile-status";
+  });
+  document.getElementById("removeAvatarBtn").addEventListener("click", async () => {
+    if (!currentAuthUser || !supabaseClient) return;
+    const path = currentAuthUser.user_metadata?.avatar_path;
+    if (!path && !selectedAvatarFile) {
+      profileStatus.textContent = "There is no profile photo to remove.";
+      profileStatus.className = "profile-status";
+      return;
+    }
+    if (path && !window.confirm("Remove your profile photo from your account?")) return;
+    const button = document.getElementById("removeAvatarBtn");
+    button.disabled = true;
+    try {
+      if (path) {
+        const { error: removeError } = await supabaseClient.storage.from("avatars").remove([path]);
+        if (removeError) throw removeError;
+        const { data, error } = await supabaseClient.auth.updateUser({
+          data: { ...(currentAuthUser.user_metadata || {}), avatar_path: null }
+        });
+        if (error) throw error;
+        setCurrentUser(data.user);
+      }
+      if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+      profilePreviewUrl = "";
+      selectedAvatarFile = null;
+      document.getElementById("profileAvatarInput").value = "";
+      paintProfileAvatar();
+      profileStatus.textContent = "Profile photo removed.";
+      profileStatus.className = "profile-status is-success";
+    } catch (error) {
+      profileStatus.textContent = error?.message || "Could not remove the profile photo.";
+      profileStatus.className = "profile-status is-error";
+    } finally {
+      button.disabled = false;
+    }
+  });
+  profileForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!currentAuthUser || !supabaseClient) return;
+    const name = document.getElementById("profileName").value.trim();
+    if (!name || name.length > 80) {
+      profileStatus.textContent = "Enter a display name up to 80 characters.";
+      profileStatus.className = "profile-status is-error";
+      return;
+    }
+    const saveButton = document.getElementById("profileSaveBtn");
+    saveButton.disabled = true;
+    profileStatus.textContent = "Saving your profile…";
+    profileStatus.className = "profile-status";
+    try {
+      let avatarPath = currentAuthUser.user_metadata?.avatar_path || null;
+      if (selectedAvatarFile) {
+        avatarPath = `${currentAuthUser.id}/avatar`;
+        const { error: uploadError } = await supabaseClient.storage.from("avatars").upload(avatarPath, selectedAvatarFile, {
+          upsert: true,
+          contentType: selectedAvatarFile.type,
+          cacheControl: "3600"
+        });
+        if (uploadError) throw uploadError;
+      }
+      const metadata = { ...(currentAuthUser.user_metadata || {}), display_name: name };
+      if (avatarPath) metadata.avatar_path = avatarPath;
+      const { data, error } = await supabaseClient.auth.updateUser({ data: metadata });
+      if (error) throw error;
+      if (profilePreviewUrl) URL.revokeObjectURL(profilePreviewUrl);
+      profilePreviewUrl = "";
+      selectedAvatarFile = null;
+      document.getElementById("profileAvatarInput").value = "";
+      setCurrentUser(data.user);
+      profileStatus.textContent = "Profile saved.";
+      profileStatus.className = "profile-status is-success";
+    } catch (error) {
+      profileStatus.textContent = error?.message || "Could not save your profile. Please try again.";
+      profileStatus.className = "profile-status is-error";
+    } finally {
+      saveButton.disabled = false;
+    }
+  });
+  passwordForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!currentAuthUser || !supabaseClient) return;
+    const password = document.getElementById("profileNewPassword").value;
+    if (password.length < 8) {
+      passwordStatus.textContent = "Choose a password with at least 8 characters.";
+      passwordStatus.className = "profile-status is-error";
+      return;
+    }
+    const saveButton = document.getElementById("passwordSaveBtn");
+    saveButton.disabled = true;
+    passwordStatus.textContent = "Updating password…";
+    passwordStatus.className = "profile-status";
+    try {
+      const { error } = await supabaseClient.auth.updateUser({ password });
+      if (error) throw error;
+      document.getElementById("profileNewPassword").value = "";
+      passwordStatus.textContent = "Password updated.";
+      passwordStatus.className = "profile-status is-success";
+    } catch (error) {
+      passwordStatus.textContent = error?.message || "Could not update the password.";
+      passwordStatus.className = "profile-status is-error";
+    } finally {
+      saveButton.disabled = false;
+    }
+  });
+  document.getElementById("profileLogoutBtn").addEventListener("click", async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    profileStatus.textContent = "Logging out…";
+    profileStatus.className = "profile-status";
+    try {
+      if (!supabaseClient) throw new Error("The Supabase browser client did not load. Refresh the page and try again.");
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) throw error;
+      setCurrentUser(null);
+      profileModal.classList.remove("open");
+    } catch (error) {
+      profileStatus.textContent = error?.message || "Could not log out. Please try again.";
+      profileStatus.className = "profile-status is-error";
+    } finally {
+      button.disabled = false;
+    }
   });
   authModal.addEventListener("click", event => {
     if (event.target === authModal) closeAuth();
   });
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && authModal.classList.contains("open")) closeAuth();
+    if (event.key === "Escape" && profileModal.classList.contains("open")) profileModal.classList.remove("open");
   });
 
   document.getElementById("googleAuthBtn").addEventListener("click", async () => {
@@ -1672,32 +2028,16 @@
   });
 
   async function restoreSupabaseSession() {
-    if (getCurrentUser()) {
-      renderAuthState();
-      return;
-    }
     try {
       const { data: { session } } = await supabaseClient?.auth.getSession() || { data: { session: null } };
-      const user = session?.user;
-      if (user) {
-        setCurrentUser({
-          name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email,
-          email: user.email
-        });
-      } else {
-        setCurrentUser(null);
-      }
+      setCurrentUser(session?.user || null);
     } catch {
       setCurrentUser(null);
     }
   }
 
   supabaseClient?.auth.onAuthStateChange((_event, session) => {
-    const user = session?.user;
-    setCurrentUser(user ? {
-      name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email,
-      email: user.email
-    } : null);
+    setCurrentUser(session?.user || null);
   });
   restoreSupabaseSession();
 
@@ -2074,7 +2414,17 @@
       const midiUrl = button.dataset.midiUrl
         ? new URL(button.dataset.midiUrl, window.location.href).href
         : downloadButton.href;
-      const response = await fetch(midiUrl);
+      let headers = {};
+      if (!button.dataset.midiUrl) {
+        const session = await requireSignedInSession();
+        if (!session) {
+          stopMidiPreview(previewState);
+          setPreviewStatus(button, "Log in to preview your extracted MIDI.");
+          return;
+        }
+        headers = { Authorization: `Bearer ${session.access_token}` };
+      }
+      const response = await fetch(midiUrl, { headers });
       if (!response.ok) {
         let detail = "";
         try {
@@ -2138,6 +2488,45 @@
   document.getElementById("previewChordsBtn").addEventListener("click", event => {
     previewMidi(event.currentTarget);
   });
+  async function downloadExtractedMidi(event) {
+    event.preventDefault();
+    const link = event.currentTarget;
+    let session;
+    try {
+      session = await requireSignedInSession();
+    } catch (error) {
+      openAuth("login");
+      showAuthError(error);
+      return;
+    }
+    if (!session) return;
+
+    try {
+      const response = await fetch(link.href, { headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          setCurrentUser(null);
+          openAuth("login");
+          showAuthError(error.detail || "Your login session expired. Please log in again.");
+        }
+        throw new Error(error.detail || "Could not download the MIDI file.");
+      }
+
+      const trackName = link.id === "downloadMelodyBtn" ? "melody" : "chords";
+      const sign = semitoneOffset >= 0 ? "+" : "";
+      const downloadUrl = URL.createObjectURL(await response.blob());
+      const temporaryLink = document.createElement("a");
+      temporaryLink.href = downloadUrl;
+      temporaryLink.download = `${currentSongName}_${trackName}_key${sign}${semitoneOffset}.mid`;
+      temporaryLink.click();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      document.getElementById("previewStatus").textContent = error.message;
+    }
+  }
+  document.getElementById("downloadMelodyBtn").addEventListener("click", downloadExtractedMidi);
+  document.getElementById("downloadChordsBtn").addEventListener("click", downloadExtractedMidi);
   document.querySelectorAll(".demo-card .btn-preview").forEach(button => {
     button.addEventListener("click", event => {
       previewMidi(event.currentTarget);
@@ -2229,6 +2618,16 @@
   const resultsSection = document.getElementById("resultsSection");
 
   extractBtn.addEventListener("click", async () => {
+    let session;
+    try {
+      session = await requireSignedInSession();
+    } catch (error) {
+      openAuth("login");
+      showAuthError(error);
+      return;
+    }
+    if (!session) return;
+
     let endpoint = "";
     let body = null;
     let headers = {};
@@ -2259,9 +2658,15 @@
     resultsSection.style.display = "none";
 
     try {
+      headers.Authorization = `Bearer ${session.access_token}`;
       const res = await fetch(endpoint, { method: "POST", headers: headers, body: body });
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setCurrentUser(null);
+          openAuth("login");
+          showAuthError(err.detail || "Your login session expired. Please log in again.");
+        }
         throw new Error(err.detail || "Processing failed");
       }
       const data = await res.json();

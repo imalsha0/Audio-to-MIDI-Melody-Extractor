@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -66,6 +66,31 @@ class AuthRequest(BaseModel):
     email: str
     password: str
     name: Optional[str] = None
+
+
+async def require_authenticated_user(request: Request) -> dict:
+    """Verify the Supabase access token before allowing extraction or MIDI downloads."""
+    authorization = request.headers.get("authorization", "")
+    scheme, _, access_token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not access_token.strip():
+        raise HTTPException(status_code=401, detail="Log in to extract melody and chords.")
+
+    headers = {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": f"Bearer {access_token.strip()}",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0, trust_env=False) as client:
+            response = await client.get(f"{SUPABASE_URL}/auth/v1/user", headers=headers)
+    except httpx.HTTPError as error:
+        print(f"[Supabase Auth] Session verification failed: {type(error).__name__}: {error}")
+        raise HTTPException(status_code=503, detail="Cannot verify your login with Supabase right now.")
+
+    if response.status_code in (401, 403):
+        raise HTTPException(status_code=401, detail="Your login session expired. Please log in again.")
+    if response.status_code != 200:
+        raise HTTPException(status_code=503, detail="Supabase could not verify your login right now.")
+    return response.json()
 
 
 def cleanup_expired_outputs(now: Optional[float] = None) -> int:
@@ -285,7 +310,7 @@ def process_audio_pipeline(input_audio_path: Path, song_name: str) -> dict:
 
 
 @app.post("/process-audio")
-async def process_audio_file(file: UploadFile = File(...)):
+async def process_audio_file(file: UploadFile = File(...), user: dict = Depends(require_authenticated_user)):
     """Upload audio file or mic recording for analysis & extraction."""
     filename = file.filename or "recording.wav"
     song_name = Path(filename).stem.replace(" ", "_")
@@ -309,7 +334,7 @@ async def process_audio_file(file: UploadFile = File(...)):
 
 
 @app.post("/process-url")
-async def process_url(req: URLRequest):
+async def process_url(req: URLRequest, user: dict = Depends(require_authenticated_user)):
     """Download audio from ANY web URL (YouTube, SoundCloud, direct MP3 link) & extract MIDI/Chords."""
     if not req.url or not req.url.strip():
         raise HTTPException(status_code=400, detail="URL cannot be empty.")
@@ -328,7 +353,7 @@ async def process_url(req: URLRequest):
 
 
 @app.get("/download-melody/{song_name}")
-def download_melody(song_name: str, transpose: int = 0):
+def download_melody(song_name: str, transpose: int = 0, user: dict = Depends(require_authenticated_user)):
     """Download Melody MIDI file with optional semitone transposition."""
     orig_midi = OUTPUT_DIR / song_name / "vocals_basic_pitch.mid"
     if not orig_midi.exists():
@@ -349,7 +374,7 @@ def download_melody(song_name: str, transpose: int = 0):
 
 
 @app.get("/download-chords/{song_name}")
-def download_chords(song_name: str, transpose: int = 0):
+def download_chords(song_name: str, transpose: int = 0, user: dict = Depends(require_authenticated_user)):
     """Download Chords MIDI file with optional semitone transposition."""
     orig_midi = OUTPUT_DIR / song_name / "chords.mid"
     if not orig_midi.exists():
