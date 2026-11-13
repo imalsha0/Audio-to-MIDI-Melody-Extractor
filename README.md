@@ -43,8 +43,9 @@ and do not fit Vercel's serverless function model.
    audio upload or direct audio-file URL in that case. Keep the service as a
    single instance because uploaded audio and generated MIDI files are stored
    temporarily on that instance. Downloads and audio processing run outside
-   the web event loop, with one extraction at a time, to keep health checks
-   responsive and limit memory pressure on the free instance.
+   the web event loop, with one extraction at a time. Extraction is submitted
+   as a background job and the frontend polls for its result, so longer uploads
+   do not have to hold one HTTP request open until processing finishes.
 2. In Vercel, import the same repository and set **Root Directory** to
    `frontend`. It is a static site; no build command is required.
 3. After Render creates the API service, copy its public URL (for example,

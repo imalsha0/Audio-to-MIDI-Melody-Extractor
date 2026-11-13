@@ -2637,18 +2637,18 @@
     if (currentTab === "urlPane") {
       const url = document.getElementById("mediaUrl").value.trim();
       if (!url) { alert("Please enter a valid URL!"); return; }
-      endpoint = `${API_URL}/process-url`;
+      endpoint = `${API_URL}/process-url/start`;
       body = JSON.stringify({ url: url });
       headers = { "Content-Type": "application/json" };
     } else if (currentTab === "filePane") {
       if (!selectedFile) { alert("Please select an audio file!"); return; }
-      endpoint = `${API_URL}/process-audio`;
+      endpoint = `${API_URL}/process-audio/start`;
       const formData = new FormData();
       formData.append("file", selectedFile);
       body = formData;
     } else if (currentTab === "micPane") {
       if (!recordedBlob) { alert("Please record your voice first!"); return; }
-      endpoint = `${API_URL}/process-audio`;
+      endpoint = `${API_URL}/process-audio/start`;
       const formData = new FormData();
       formData.append("file", recordedBlob, recordedFilename);
       body = formData;
@@ -2671,8 +2671,42 @@
         }
         throw new Error(err.detail || "Processing failed");
       }
-      const data = await res.json();
-      displayResults(data);
+      const { job_id: jobId } = await res.json();
+      if (!jobId) throw new Error("The server did not return a processing job ID.");
+
+      document.getElementById("statusTitle").textContent = "Processing Audio...";
+      document.getElementById("statusDesc").textContent =
+        "Your audio is being analyzed. Longer recordings can take several minutes.";
+
+      const deadline = Date.now() + 15 * 60 * 1000;
+      let completed = false;
+      while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const statusResponse = await fetch(`${API_URL}/jobs/${encodeURIComponent(jobId)}`, {
+          headers: { Authorization: headers.Authorization },
+          cache: "no-store"
+        });
+        const job = await statusResponse.json().catch(() => ({}));
+        if (!statusResponse.ok) {
+          if (statusResponse.status === 401) {
+            setCurrentUser(null);
+            openAuth("login");
+            showAuthError(job.detail || "Your login session expired. Please log in again.");
+          }
+          throw new Error(job.detail || "Could not check audio processing status.");
+        }
+        if (job.status === "completed") {
+          displayResults(job.result);
+          completed = true;
+          break;
+        }
+        if (job.status === "failed") {
+          throw new Error(job.error || "Audio processing failed.");
+        }
+      }
+      if (!completed) {
+        throw new Error("Audio processing is taking longer than expected. Please try again later.");
+      }
     } catch (err) {
       alert("Error: " + err.message);
     } finally {

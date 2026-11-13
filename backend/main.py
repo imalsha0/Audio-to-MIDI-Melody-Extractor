@@ -10,6 +10,8 @@ import shutil
 import subprocess
 import tempfile
 import time
+import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -58,6 +60,19 @@ SEPARATED_DIR.mkdir(exist_ok=True)
 
 cleanup_task: Optional[asyncio.Task] = None
 processing_semaphore = asyncio.Semaphore(1)
+
+
+@dataclass
+class ProcessingJob:
+    user_id: str
+    created_at: float = field(default_factory=time.time)
+    status: str = "pending"
+    result: Optional[dict] = None
+    error: Optional[str] = None
+    task: Optional[asyncio.Task] = None
+
+
+processing_jobs: dict[str, ProcessingJob] = {}
 
 
 class URLRequest(BaseModel):
@@ -117,9 +132,25 @@ def cleanup_expired_outputs(now: Optional[float] = None) -> int:
     return removed_count
 
 
+def cleanup_expired_jobs(now: Optional[float] = None) -> int:
+    current_time = time.time() if now is None else now
+    expired_jobs = [
+        job_id
+        for job_id, job in processing_jobs.items()
+        if job.status in {"completed", "failed"}
+        and job.task is not None
+        and job.task.done()
+        and current_time - job.created_at >= OUTPUT_RETENTION_SECONDS
+    ]
+    for job_id in expired_jobs:
+        del processing_jobs[job_id]
+    return len(expired_jobs)
+
+
 async def cleanup_expired_outputs_loop():
     while True:
         await asyncio.to_thread(cleanup_expired_outputs)
+        cleanup_expired_jobs()
         await asyncio.sleep(OUTPUT_CLEANUP_INTERVAL_SECONDS)
 
 
@@ -313,6 +344,111 @@ def process_audio_pipeline(input_audio_path: Path, song_name: str) -> dict:
                 shutil.rmtree(vocals_path.parent)
             except OSError as e:
                 print(f"[Cleanup] Could not remove Demucs audio stems at {vocals_path.parent}: {e}")
+
+
+def create_processing_job(user: dict) -> tuple[str, ProcessingJob]:
+    job_id = uuid.uuid4().hex
+    job = ProcessingJob(user_id=user["id"])
+    processing_jobs[job_id] = job
+    return job_id, job
+
+
+async def run_audio_processing_job(job_id: str, input_path: Path, song_name: str):
+    job = processing_jobs[job_id]
+    job.status = "processing"
+    try:
+        async with processing_semaphore:
+            job.result = await asyncio.to_thread(process_audio_pipeline, input_path, song_name)
+        job.status = "completed"
+    except Exception as error:
+        job.error = str(error.detail) if isinstance(error, HTTPException) else str(error)
+        job.status = "failed"
+        print(f"[Processing Job {job_id}] Failed: {type(error).__name__}: {error}")
+    finally:
+        try:
+            if input_path.exists():
+                input_path.unlink()
+        except OSError as error:
+            print(f"[Processing Job {job_id}] Could not remove uploaded audio {input_path}: {error}")
+
+
+async def run_url_processing_job(job_id: str, url: str):
+    job = processing_jobs[job_id]
+    downloaded_file: Optional[Path] = None
+    job.status = "processing"
+    try:
+        async with processing_semaphore:
+            downloaded_file = await asyncio.to_thread(download_audio_from_url, url, UPLOAD_DIR)
+            song_name = downloaded_file.stem.replace(" ", "_")
+            job.result = await asyncio.to_thread(process_audio_pipeline, downloaded_file, song_name)
+        job.status = "completed"
+    except yt_dlp.utils.DownloadError as error:
+        job.error = (
+            "Could not download audio from that link. YouTube may block downloads from cloud servers; "
+            "try uploading an audio file or using a direct audio-file URL."
+        )
+        job.status = "failed"
+        print(f"[Processing Job {job_id}] URL download failed: {error}")
+    except Exception as error:
+        job.error = str(error.detail) if isinstance(error, HTTPException) else str(error)
+        job.status = "failed"
+        print(f"[Processing Job {job_id}] URL processing failed: {type(error).__name__}: {error}")
+    finally:
+        try:
+            if downloaded_file is not None and downloaded_file.exists():
+                downloaded_file.unlink()
+        except OSError as error:
+            print(f"[Processing Job {job_id}] Could not remove downloaded audio {downloaded_file}: {error}")
+
+
+@app.post("/process-audio/start")
+async def start_audio_processing_job(file: UploadFile = File(...), user: dict = Depends(require_authenticated_user)):
+    """Accept an audio upload and return immediately while extraction runs in the background."""
+    filename = file.filename or "recording.wav"
+    song_name = Path(filename).stem.replace(" ", "_")
+    input_path: Optional[Path] = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f"{song_name}_",
+            suffix=Path(filename).suffix,
+            dir=UPLOAD_DIR,
+            delete=False,
+        ) as temp_file:
+            input_path = Path(temp_file.name)
+            await asyncio.to_thread(shutil.copyfileobj, file.file, temp_file)
+    except Exception:
+        if input_path is not None and input_path.exists():
+            input_path.unlink()
+        raise
+
+    job_id, job = create_processing_job(user)
+    job.task = asyncio.create_task(run_audio_processing_job(job_id, input_path, song_name))
+    return JSONResponse(status_code=202, content={"job_id": job_id, "status": job.status})
+
+
+@app.post("/process-url/start")
+async def start_url_processing_job(req: URLRequest, user: dict = Depends(require_authenticated_user)):
+    """Accept a URL and return immediately while download and extraction run in the background."""
+    if not req.url or not req.url.strip():
+        raise HTTPException(status_code=400, detail="URL cannot be empty.")
+
+    job_id, job = create_processing_job(user)
+    job.task = asyncio.create_task(run_url_processing_job(job_id, req.url.strip()))
+    return JSONResponse(status_code=202, content={"job_id": job_id, "status": job.status})
+
+
+@app.get("/jobs/{job_id}")
+async def get_processing_job(job_id: str, user: dict = Depends(require_authenticated_user)):
+    job = processing_jobs.get(job_id)
+    if job is None or job.user_id != user["id"]:
+        raise HTTPException(status_code=404, detail="Processing job not found.")
+
+    response = {"job_id": job_id, "status": job.status}
+    if job.status == "completed":
+        response["result"] = job.result
+    elif job.status == "failed":
+        response["error"] = job.error
+    return JSONResponse(content=response)
 
 
 @app.post("/process-audio")
