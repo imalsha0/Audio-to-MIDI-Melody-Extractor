@@ -57,6 +57,7 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 SEPARATED_DIR.mkdir(exist_ok=True)
 
 cleanup_task: Optional[asyncio.Task] = None
+processing_semaphore = asyncio.Semaphore(1)
 
 
 class URLRequest(BaseModel):
@@ -329,9 +330,10 @@ async def process_audio_file(file: UploadFile = File(...), user: dict = Depends(
             delete=False,
         ) as temp_file:
             input_path = Path(temp_file.name)
-            shutil.copyfileobj(file.file, temp_file)
+            await asyncio.to_thread(shutil.copyfileobj, file.file, temp_file)
 
-        res = process_audio_pipeline(input_path, song_name)
+        async with processing_semaphore:
+            res = await asyncio.to_thread(process_audio_pipeline, input_path, song_name)
         return JSONResponse(content=res)
     finally:
         if input_path is not None and input_path.exists():
@@ -346,9 +348,12 @@ async def process_url(req: URLRequest, user: dict = Depends(require_authenticate
 
     downloaded_file: Optional[Path] = None
     try:
-        downloaded_file = download_audio_from_url(req.url.strip(), UPLOAD_DIR)
-        song_name = downloaded_file.stem.replace(" ", "_")
-        res = process_audio_pipeline(downloaded_file, song_name)
+        async with processing_semaphore:
+            downloaded_file = await asyncio.to_thread(
+                download_audio_from_url, req.url.strip(), UPLOAD_DIR
+            )
+            song_name = downloaded_file.stem.replace(" ", "_")
+            res = await asyncio.to_thread(process_audio_pipeline, downloaded_file, song_name)
         return JSONResponse(content=res)
     except yt_dlp.utils.DownloadError as e:
         print(f"[URL Download] yt-dlp failed: {e}")
