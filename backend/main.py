@@ -230,17 +230,21 @@ def process_audio_pipeline(input_audio_path: Path, song_name: str) -> dict:
     print(f"[Analysis] Running BPM, Key, and Chord extraction on {input_audio_path}")
     analysis_result = analyze_audio_file(str(input_audio_path))
 
-    # 2. Separate Vocals with Demucs using python -m demucs
-    print(f"[Demucs] Isolating vocal melody stem...")
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "demucs", "--two-stems=vocals", "-o", str(SEPARATED_DIR), str(input_audio_path)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except Exception as e:
-        print(f"Demucs Warning/Error: {e}. Falling back to original audio for pitch detection.")
+    # Demucs can exceed the memory available on small hosted instances.
+    skip_demucs = os.getenv("SKIP_DEMUCS", "").lower() in {"1", "true", "yes"}
+    if skip_demucs:
+        print("[Demucs] Skipped by configuration; using original audio for pitch detection.")
+    else:
+        print("[Demucs] Isolating vocal melody stem...")
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "demucs", "--two-stems=vocals", "-o", str(SEPARATED_DIR), str(input_audio_path)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except Exception as e:
+            print(f"Demucs Warning/Error: {e}. Falling back to original audio for pitch detection.")
 
     # Locate vocals wav or fallback to input_audio_path
     vocals_stem_name = input_audio_path.stem

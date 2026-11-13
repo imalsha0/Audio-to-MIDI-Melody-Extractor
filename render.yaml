@@ -9,3 +9,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.11
+      - key: SKIP_DEMUCS
+        value: "true"
