@@ -37,8 +37,9 @@ and do not fit Vercel's serverless function model.
    The build installs Deno and yt-dlp's JavaScript challenge support for
    YouTube links. The free-plan configuration skips Demucs to reduce memory
    use and runs melody detection on the original audio, which may reduce
-   melody accuracy. Basic Pitch processing can still exceed free-plan memory
-   limits. Some media sites may block downloads from cloud servers; use an
+   melody accuracy. Basic Pitch uses its packaged ONNX model through ONNX
+   Runtime; processing can still exceed free-plan memory limits. Some media
+   sites may block downloads from cloud servers; use an
    audio upload or direct audio-file URL in that case. Keep the service as a
    single instance because uploaded audio and generated MIDI files are stored
    temporarily on that instance. Downloads and audio processing run outside

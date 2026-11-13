@@ -6,12 +6,15 @@ Usage: python extract_melody.py test_audio/sample.mp3
 import sys
 import os
 import io
+from pathlib import Path
 
 if hasattr(sys.stdout, 'buffer'):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 from basic_pitch.inference import predict_and_save
 from basic_pitch import ICASSP_2022_MODEL_PATH
+
+MODEL_PATH = Path(ICASSP_2022_MODEL_PATH).with_name("nmp.onnx")
 
 
 def extract_melody(audio_path: str, output_dir: str = None):
@@ -35,7 +38,7 @@ def extract_melody(audio_path: str, output_dir: str = None):
         sonify_midi=False,
         save_model_outputs=False,
         save_notes=False,
-        model_or_model_path=ICASSP_2022_MODEL_PATH,
+        model_or_model_path=MODEL_PATH,
         onset_threshold=0.5, 
         frame_threshold=0.3, 
         minimum_note_length=58, 
