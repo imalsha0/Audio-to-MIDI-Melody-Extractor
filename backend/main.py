@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 import httpx
+import yt_dlp
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -349,6 +350,15 @@ async def process_url(req: URLRequest, user: dict = Depends(require_authenticate
         song_name = downloaded_file.stem.replace(" ", "_")
         res = process_audio_pipeline(downloaded_file, song_name)
         return JSONResponse(content=res)
+    except yt_dlp.utils.DownloadError as e:
+        print(f"[URL Download] yt-dlp failed: {e}")
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Could not download audio from that link. YouTube may block downloads from cloud servers; "
+                "try uploading an audio file or using a direct audio-file URL."
+            ),
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"URL Processing failed: {str(e)}")
     finally:

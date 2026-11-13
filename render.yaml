@@ -3,8 +3,8 @@ services:
     name: audio-to-midi-melody-extractor-api
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r requirements.txt && curl -fsSL https://deno.land/install.sh -o /tmp/deno-install.sh && DENO_INSTALL="$PWD/.deno" sh /tmp/deno-install.sh && "$PWD/.deno/bin/deno" --version
+    startCommand: export PATH="$PWD/.deno/bin:$PATH" && cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION

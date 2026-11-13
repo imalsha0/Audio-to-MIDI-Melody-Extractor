@@ -34,11 +34,14 @@ separate Python web service: Demucs and Basic Pitch are CPU- and memory-heavy
 and do not fit Vercel's serverless function model.
 
 1. Deploy the repository to Render using the included `render.yaml` blueprint.
-   The free-plan configuration skips Demucs to reduce memory use and runs
-   melody detection on the original audio, which may reduce melody accuracy.
-   Basic Pitch processing can still exceed free-plan memory limits. Keep the
-   service as a single instance because uploaded audio and generated MIDI
-   files are stored temporarily on that instance.
+   The build installs Deno and yt-dlp's JavaScript challenge support for
+   YouTube links. The free-plan configuration skips Demucs to reduce memory
+   use and runs melody detection on the original audio, which may reduce
+   melody accuracy. Basic Pitch processing can still exceed free-plan memory
+   limits. Some media sites may block downloads from cloud servers; use an
+   audio upload or direct audio-file URL in that case. Keep the service as a
+   single instance because uploaded audio and generated MIDI files are stored
+   temporarily on that instance.
 2. In Vercel, import the same repository and set **Root Directory** to
    `frontend`. It is a static site; no build command is required.
 3. After Render creates the API service, copy its public URL (for example,
